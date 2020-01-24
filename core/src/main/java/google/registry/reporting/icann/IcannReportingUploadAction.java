@@ -141,11 +141,11 @@ public final class IcannReportingUploadAction implements Runnable {
       CursorType cursorType,
       String tldStr,
       ImmutableMap.Builder<String, Boolean> reportSummaryBuilder) {
+    DateTime cursorTimeMinusMonth = cursorTime.withDayOfMonth(1).minusMonths(1);
     String reportSubdir =
         String.format(
             "icann/monthly/%d-%02d",
-            cursorTime.withDayOfMonth(1).minusMonths(1).getYear(),
-            cursorTime.withDayOfMonth(1).minusMonths(1).getMonthOfYear());
+            cursorTimeMinusMonth.getYear(), cursorTimeMinusMonth.getMonthOfYear());
     String reportBucketname = String.format("%s/%s", reportingBucket, reportSubdir);
     String filename = getFileName(cursorType, cursorTime, tldStr);
     final GcsFilename gcsFilename = new GcsFilename(reportBucketname, filename);
@@ -196,12 +196,13 @@ public final class IcannReportingUploadAction implements Runnable {
   }
 
   private String getFileName(CursorType cursorType, DateTime cursorTime, String tld) {
+    DateTime cursorTimeMinusMonth = cursorTime.withDayOfMonth(1).minusMonths(1);
     return String.format(
         "%s%s%d%02d.csv",
         tld,
         (cursorType.equals(CursorType.ICANN_UPLOAD_ACTIVITY) ? "-activity-" : "-transactions-"),
-        cursorTime.withDayOfMonth(1).minusMonths(1).year().get(),
-        cursorTime.withDayOfMonth(1).minusMonths(1).monthOfYear().get());
+        cursorTimeMinusMonth.year().get(),
+        cursorTimeMinusMonth.monthOfYear().get());
   }
 
   /** Returns a map of each cursor to the CursorType and tld. */

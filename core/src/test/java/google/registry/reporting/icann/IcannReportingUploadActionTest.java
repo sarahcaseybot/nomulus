@@ -151,7 +151,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_January() throws Exception {
+  public void testSuccess_january() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
         Cursor.create(
