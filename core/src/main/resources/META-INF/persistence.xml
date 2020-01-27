@@ -25,6 +25,11 @@
     <class>google.registry.schema.domain.RegistryLock</class>
     <class>google.registry.schema.tmch.ClaimsList</class>
     <class>google.registry.schema.cursor.Cursor</class>
+<<<<<<< HEAD
+=======
+    <class>google.registry.schema.server.Lock</class>
+    <class>google.registry.model.transfer.BaseTransferObject</class>
+>>>>>>> 3da2eac5d... Add the schema and DAO for Locks in CloudSQL
     <class>google.registry.schema.tld.PremiumList</class>
     <class>google.registry.schema.tld.PremiumEntry</class>
     <class>google.registry.schema.tld.ReservedList</class>
