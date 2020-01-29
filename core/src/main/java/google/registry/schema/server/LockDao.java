@@ -24,6 +24,7 @@ import google.registry.schema.server.Lock.LockId;
 /** Data access object class for {@link Lock}. */
 public class LockDao {
 
+  /** Saves the {@link Lock} object to CloudSQL. */
   public static void save(Lock lock) {
     checkArgument(load(lock.resourceName, lock.tld) == null, "This lock already exists");
     jpaTm()
@@ -33,6 +34,7 @@ public class LockDao {
             });
   }
 
+  /** Loads a {@link Lock} object with the given resourceName and tld from CloudSQL. */
   public static Lock load(String resourceName, String tld) {
     checkNotNull(resourceName, "The resource name of the lock to load cannot be null");
     checkNotNull(tld, "The tld of the lock to load cannot be null");
@@ -40,6 +42,7 @@ public class LockDao {
         .transact(() -> jpaTm().getEntityManager().find(Lock.class, new LockId(resourceName, tld)));
   }
 
+  /** Loads a global {@link Lock} object with the given resourceName from CloudSQL. */
   public static Lock load(String resourceName) {
     checkNotNull(resourceName, "The resource name of the lock to load cannot be null");
     return jpaTm()
@@ -47,6 +50,7 @@ public class LockDao {
             () -> jpaTm().getEntityManager().find(Lock.class, new LockId(resourceName, GLOBAL)));
   }
 
+  /** Removes the given {@link Lock} object from CloudSQL. */
   public static void delete(Lock lock) {
     checkArgument(load(lock.resourceName, lock.tld) != null, "The lock to delete does not exist");
     jpaTm()

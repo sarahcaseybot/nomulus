@@ -113,7 +113,10 @@ CREATE TABLE public."Domain" (
     smd_id text,
     subordinate_hosts text[],
     tld text
+);
 
+
+--
 -- Name: Lock; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -377,19 +380,19 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
-<<<<<<< HEAD
 -- Name: Domain Domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
-=======
+
+
+--
 -- Name: Lock Lock_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Lock"
     ADD CONSTRAINT "Lock_pkey" PRIMARY KEY (resource_name, tld);
->>>>>>> 41b895b1d... Add the schema and DAO for Locks in CloudSQL
 
 
 --

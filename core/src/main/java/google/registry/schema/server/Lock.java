@@ -42,20 +42,33 @@ import org.joda.time.Duration;
 @IdClass(LockId.class)
 public class Lock {
 
+  /** The resource name used to create the lock. */
   @Column(nullable = false)
   @Id
   String resourceName;
 
+  /** The tld used to create the lock. */
   @Column(nullable = false)
   @Id
   String tld;
 
+  /**
+   * Unique log ID of the request that owns this lock.
+   *
+   * <p>When that request is no longer running (is finished), the lock can be considered implicitly
+   * released.
+   *
+   * <p>See {@link RequestStatusCheckerImpl#getLogId} for details about how it's created in
+   * practice.
+   */
   @Column(nullable = false)
   String requestLogId;
 
+  /** When the lock was acquired. Used for logging. */
   @Column(nullable = false)
   ZonedDateTime acquiredTime;
 
+  /** When the lock can be considered implicitly released. */
   @Column(nullable = false)
   ZonedDateTime expirationTime;
 
@@ -85,6 +98,10 @@ public class Lock {
       String requestLogId,
       DateTime acquiredTime,
       Duration leaseLength) {
+    checkNotNull(resourceName, "The resource name cannot be null");
+    checkNotNull(acquiredTime, "The acquired time of the lock cannot be null");
+    checkNotNull(leaseLength, "The lease length of the lock cannot be null");
+    checkNotNull(requestLogId, "The requestLogId of the lock cannot be null");
     checkNotNull(
         tld, "The tld cannot be null. To create a global lock, use the createGlobal method");
     DateTime expireTime = acquiredTime.plus(leaseLength);
@@ -94,21 +111,25 @@ public class Lock {
   /** Constructs a {@link Lock} object with a {@link GLOBAL} scope. */
   public static Lock createGlobal(
       String resourceName, String requestLogId, DateTime acquiredTime, Duration leaseLength) {
+    checkNotNull(acquiredTime, "The acquired time of the lock cannot be null");
+    checkNotNull(leaseLength, "The lease length of the lock cannot be null");
+    checkNotNull(resourceName, "The resource name cannot be null");
+    checkNotNull(requestLogId, "The requestLogId of the lock cannot be null");
     DateTime expireTime = acquiredTime.plus(leaseLength);
     return new Lock(resourceName, GLOBAL, requestLogId, acquiredTime, expireTime);
   }
 
   static class LockId extends ImmutableObject implements Serializable {
 
-    public String resourceName;
+    String resourceName;
 
-    public String tld;
+    String tld;
 
     private LockId() {}
 
     public LockId(String resourceName, String tld) {
-      this.resourceName = resourceName;
-      this.tld = tld;
+      this.resourceName = checkNotNull(resourceName, "The resource name cannot be null");
+      this.tld = checkNotNull(tld, "The tld cannot be null");
     }
   }
 }
