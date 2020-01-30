@@ -75,6 +75,7 @@ public class Lock {
   /** The scope of a lock that is not specific to a single tld. */
   public static final String GLOBAL = "GLOBAL";
 
+  /** Create a new {@link Lock} for the given resource name in the specified tld. */
   private Lock(
       String resourceName,
       String tld,
@@ -88,6 +89,25 @@ public class Lock {
     this.expirationTime = DateTimeUtils.toZonedDateTime(expirationTime);
   }
 
+  /**
+   * Validate input and create a new {@link Lock} for the given resource name in the specified tld.
+   */
+  private Lock(
+      String resourceName,
+      String tld,
+      String requestLogId,
+      DateTime acquiredTime,
+      Duration leaseLength) {
+    this.resourceName = checkNotNull(resourceName, "The resource name cannot be null");
+    this.tld = checkNotNull(tld, "The tld cannot be null. For a global lock, use GLOBAL");
+    this.requestLogId = checkNotNull(requestLogId, "The requestLogId of the lock cannot be null");
+    this.acquiredTime =
+        DateTimeUtils.toZonedDateTime(
+            checkNotNull(acquiredTime, "The acquired time of the lock cannot be null"));
+    checkNotNull(leaseLength, "The lease length of the lock cannot be null");
+    this.expirationTime = DateTimeUtils.toZonedDateTime(acquiredTime.plus(leaseLength));
+  }
+
   // Hibernate requires a default constructor.
   private Lock() {}
 
@@ -98,25 +118,15 @@ public class Lock {
       String requestLogId,
       DateTime acquiredTime,
       Duration leaseLength) {
-    checkNotNull(resourceName, "The resource name cannot be null");
-    checkNotNull(acquiredTime, "The acquired time of the lock cannot be null");
-    checkNotNull(leaseLength, "The lease length of the lock cannot be null");
-    checkNotNull(requestLogId, "The requestLogId of the lock cannot be null");
     checkNotNull(
         tld, "The tld cannot be null. To create a global lock, use the createGlobal method");
-    DateTime expireTime = acquiredTime.plus(leaseLength);
-    return new Lock(resourceName, tld, requestLogId, acquiredTime, expireTime);
+    return new Lock(resourceName, tld, requestLogId, acquiredTime, leaseLength);
   }
 
   /** Constructs a {@link Lock} object with a {@link GLOBAL} scope. */
   public static Lock createGlobal(
       String resourceName, String requestLogId, DateTime acquiredTime, Duration leaseLength) {
-    checkNotNull(acquiredTime, "The acquired time of the lock cannot be null");
-    checkNotNull(leaseLength, "The lease length of the lock cannot be null");
-    checkNotNull(resourceName, "The resource name cannot be null");
-    checkNotNull(requestLogId, "The requestLogId of the lock cannot be null");
-    DateTime expireTime = acquiredTime.plus(leaseLength);
-    return new Lock(resourceName, GLOBAL, requestLogId, acquiredTime, expireTime);
+    return new Lock(resourceName, GLOBAL, requestLogId, acquiredTime, leaseLength);
   }
 
   static class LockId extends ImmutableObject implements Serializable {
@@ -127,9 +137,23 @@ public class Lock {
 
     private LockId() {}
 
-    public LockId(String resourceName, String tld) {
+    private LockId(String resourceName, String tld) {
       this.resourceName = checkNotNull(resourceName, "The resource name cannot be null");
-      this.tld = checkNotNull(tld, "The tld cannot be null");
+      this.tld = tld;
+    }
+
+    /** Create a {@link LockId} to serve as the compound primary key for {@link Lock}. */
+    public static LockId create(String resourceName, String tld) {
+      checkNotNull(tld, "The tld cannot be null. To create a global LockId use createGlobal");
+      return new LockId(resourceName, tld);
+    }
+
+    /**
+     * Create a global {@link LockId} to serve as the compound primary key for {@link Lock}. Uses
+     * {@link GLOBAL} as the tld.
+     */
+    public static LockId createGlobal(String resourceName) {
+      return new LockId(resourceName, GLOBAL);
     }
   }
 }

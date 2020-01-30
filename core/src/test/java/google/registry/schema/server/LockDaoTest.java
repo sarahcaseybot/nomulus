@@ -20,6 +20,7 @@ import static org.junit.Assert.assertThrows;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.FakeClock;
+import javax.persistence.RollbackException;
 import org.joda.time.Duration;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,9 +54,9 @@ public class LockDaoTest {
     LockDao.save(lock);
     Lock lock2 =
         Lock.create("testResource", "tld", "testLogId2", fakeClock.nowUtc(), Duration.millis(4));
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> LockDao.save(lock2));
-    assertThat(thrown.getMessage()).isEqualTo("This lock already exists");
+    RollbackException thrown = assertThrows(RollbackException.class, () -> LockDao.save(lock2));
+    assertThat(thrown.getCause().getCause().getCause().getMessage())
+        .contains("duplicate key value violates unique constraint");
   }
 
   @Test
@@ -124,6 +125,6 @@ public class LockDaoTest {
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> LockDao.delete(lock));
-    assertThat(thrown.getMessage()).isEqualTo("The lock to delete does not exist");
+    assertThat(thrown.getMessage()).isEqualTo("attempt to create delete event with null entity");
   }
 }

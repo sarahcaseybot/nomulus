@@ -14,10 +14,8 @@
 
 package google.registry.schema.server;
 
-import static com.google.common.flogger.util.Checks.checkArgument;
 import static com.google.common.flogger.util.Checks.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.schema.server.Lock.GLOBAL;
 
 import google.registry.schema.server.Lock.LockId;
 
@@ -26,7 +24,6 @@ public class LockDao {
 
   /** Saves the {@link Lock} object to CloudSQL. */
   public static void save(Lock lock) {
-    checkArgument(load(lock.resourceName, lock.tld) == null, "This lock already exists");
     jpaTm()
         .transact(
             () -> {
@@ -39,7 +36,8 @@ public class LockDao {
     checkNotNull(resourceName, "The resource name of the lock to load cannot be null");
     checkNotNull(tld, "The tld of the lock to load cannot be null");
     return jpaTm()
-        .transact(() -> jpaTm().getEntityManager().find(Lock.class, new LockId(resourceName, tld)));
+        .transact(
+            () -> jpaTm().getEntityManager().find(Lock.class, LockId.create(resourceName, tld)));
   }
 
   /** Loads a global {@link Lock} object with the given resourceName from CloudSQL. */
@@ -47,21 +45,15 @@ public class LockDao {
     checkNotNull(resourceName, "The resource name of the lock to load cannot be null");
     return jpaTm()
         .transact(
-            () -> jpaTm().getEntityManager().find(Lock.class, new LockId(resourceName, GLOBAL)));
+            () -> jpaTm().getEntityManager().find(Lock.class, LockId.createGlobal(resourceName)));
   }
 
   /** Removes the given {@link Lock} object from CloudSQL. */
   public static void delete(Lock lock) {
-    checkArgument(load(lock.resourceName, lock.tld) != null, "The lock to delete does not exist");
     jpaTm()
         .transact(
             () -> {
-              jpaTm()
-                  .getEntityManager()
-                  .remove(
-                      jpaTm()
-                          .getEntityManager()
-                          .find(Lock.class, new LockId(lock.resourceName, lock.tld)));
+              jpaTm().getEntityManager().remove(load(lock.resourceName, lock.tld));
             });
   }
 }
