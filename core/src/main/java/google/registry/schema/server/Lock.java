@@ -73,7 +73,7 @@ public class Lock {
   ZonedDateTime expirationTime;
 
   /** The scope of a lock that is not specific to a single tld. */
-  public static final String GLOBAL = "GLOBAL";
+  static final String GLOBAL = "GLOBAL";
 
   /** Create a new {@link Lock} for the given resource name in the specified tld. */
   private Lock(
@@ -137,23 +137,9 @@ public class Lock {
 
     private LockId() {}
 
-    private LockId(String resourceName, String tld) {
+    LockId(String resourceName, String tld) {
       this.resourceName = checkNotNull(resourceName, "The resource name cannot be null");
       this.tld = tld;
-    }
-
-    /** Create a {@link LockId} to serve as the compound primary key for {@link Lock}. */
-    public static LockId create(String resourceName, String tld) {
-      checkNotNull(tld, "The tld cannot be null. To create a global LockId use createGlobal");
-      return new LockId(resourceName, tld);
-    }
-
-    /**
-     * Create a global {@link LockId} to serve as the compound primary key for {@link Lock}. Uses
-     * {@link GLOBAL} as the tld.
-     */
-    public static LockId createGlobal(String resourceName) {
-      return new LockId(resourceName, GLOBAL);
     }
   }
 }
