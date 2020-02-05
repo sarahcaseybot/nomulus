@@ -130,4 +130,40 @@ public class CursorDao {
       logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL.");
     }
   }
+
+  /**
+   * This takes in a cursor from Datastore and checks to see if it exists in Cloud SQL and has the
+   * same value. If a difference is detected, or the Cloud SQL cursor does not exist, a warning is
+   * logged.
+   */
+  public static void loadAndCompare(
+      google.registry.model.common.Cursor datastoreCursor, String scope) {
+    if (datastoreCursor == null) {
+      return;
+    }
+    Cursor cloudSqlCursor = load(datastoreCursor.getType(), scope);
+    if (cloudSqlCursor == null) {
+      logger.atWarning().log(
+          String.format(
+              "Cursor of type %s with the scope %s was not found in Cloud SQL.",
+              datastoreCursor.getType().name(), scope));
+    } else if (!datastoreCursor.getCursorTime().equals(cloudSqlCursor.getCursorTime())) {
+      logger.atWarning().log(
+          String.format(
+              "This cursor has a cursorTime of %s in Datastore and %s in Cloud SQL.",
+              datastoreCursor.getCursorTime(), cloudSqlCursor.getCursorTime()));
+    }
+  }
+
+  /**
+   * This takes in cursors from Datastore and checks to see if they exists in Cloud SQL and have the
+   * same value. If a difference is detected, or a Cloud SQL cursor does not exist, a warning is
+   * logged.
+   */
+  public static void loadAndCompareAll(
+      ImmutableMap<google.registry.model.common.Cursor, String> cursors) {
+    for (google.registry.model.common.Cursor cursor : cursors.keySet()) {
+      loadAndCompare(cursor, cursors.get(cursor));
+    }
+  }
 }

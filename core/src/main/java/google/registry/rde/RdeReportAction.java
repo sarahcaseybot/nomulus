@@ -20,9 +20,11 @@ import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
@@ -57,6 +59,7 @@ import org.joda.time.Duration;
 public final class RdeReportAction implements Runnable, EscrowTask {
 
   static final String PATH = "/_dr/task/rdeReport";
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject GcsUtils gcsUtils;
   @Inject EscrowTaskRunner runner;
@@ -76,9 +79,14 @@ public final class RdeReportAction implements Runnable, EscrowTask {
 
   @Override
   public void runWithLock(DateTime watermark) throws Exception {
-    DateTime cursorTime =
-        getCursorTimeOrStartOfTime(
-            ofy().load().key(Cursor.createKey(CursorType.RDE_UPLOAD, Registry.get(tld))).now());
+    Cursor cursor =
+        ofy().load().key(Cursor.createKey(CursorType.RDE_UPLOAD, Registry.get(tld))).now();
+    try {
+      loadAndCompare(cursor, tld);
+    } catch (Throwable t) {
+      logger.atSevere().withCause(t).log("Error comparing cursors.");
+    }
+    DateTime cursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(cursorTime, watermark)) {
       throw new NoContentException(
           String.format(

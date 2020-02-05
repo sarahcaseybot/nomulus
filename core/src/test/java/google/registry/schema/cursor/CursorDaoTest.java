@@ -259,4 +259,100 @@ public class CursorDaoTest {
     assertThat(createdCursor3.getCursorTime()).isEqualTo(cursor3.getCursorTime());
     assertThat(cursor3).isEqualTo(dataStoreCursor3);
   }
+
+  @Test
+  public void loadAndCompare_worksSuccessfully() {
+    loggerToIntercept.addHandler(logHandler);
+    createTld("tld");
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    CursorDao.saveCursor(cursor, "tld");
+    CursorDao.loadAndCompare(cursor, "tld");
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.WARNING);
+  }
+
+  @Test
+  public void loadAndCompare_worksSuccessfullyGlobalCursor() {
+    loggerToIntercept.addHandler(logHandler);
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.createGlobal(
+            CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    CursorDao.saveCursor(cursor, Cursor.GLOBAL);
+    CursorDao.loadAndCompare(cursor, Cursor.GLOBAL);
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.WARNING);
+  }
+
+  @Test
+  public void loadAndCompare_worksSuccessfullyCursorNotInCloudSql() {
+    loggerToIntercept.addHandler(logHandler);
+    createTld("tld");
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    CursorDao.loadAndCompare(cursor, "tld");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            "Cursor of type ICANN_UPLOAD_ACTIVITY with the scope tld was not found in Cloud SQL.");
+  }
+
+  @Test
+  public void loadAndCompare_worksSuccessfullyGlobalCursorNotInCloudSql() {
+    loggerToIntercept.addHandler(logHandler);
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.createGlobal(
+            CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    CursorDao.loadAndCompare(cursor, Cursor.GLOBAL);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            "Cursor of type RECURRING_BILLING with the scope GLOBAL was not found in Cloud SQL.");
+  }
+
+  @Test
+  public void loadAndCompare_worksSuccessfullyCursorsNotEqual() {
+    loggerToIntercept.addHandler(logHandler);
+    createTld("tld");
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    CursorDao.saveCursor(cursor, "tld");
+    cursor =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc().minusDays(5), Registry.get("tld"));
+    CursorDao.loadAndCompare(cursor, "tld");
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            "This cursor has a cursorTime of 1969-12-27T00:00:00.000Z in Datastore and"
+                + " 1970-01-01T00:00:00.000Z in Cloud SQL.");
+  }
+
+  @Test
+  public void loadAndCompareAll_worksSuccessully() {
+    loggerToIntercept.addHandler(logHandler);
+    createTlds("tld", "foo");
+    google.registry.model.common.Cursor cursor1 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    google.registry.model.common.Cursor cursor2 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("foo"));
+    google.registry.model.common.Cursor cursor3 =
+        google.registry.model.common.Cursor.createGlobal(
+            CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    ImmutableMap<google.registry.model.common.Cursor, String> cursors =
+        ImmutableMap.<google.registry.model.common.Cursor, String>builder()
+            .put(cursor1, "tld")
+            .put(cursor2, "foo")
+            .put(cursor3, Cursor.GLOBAL)
+            .build();
+    CursorDao.saveCursors(cursors);
+    CursorDao.loadAndCompareAll(cursors);
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.WARNING);
+  }
 }

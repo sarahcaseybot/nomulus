@@ -22,6 +22,7 @@ import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
@@ -207,9 +208,13 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     tm().transact(
             () -> {
               Registry registry = Registry.get(tld);
-              DateTime position =
-                  getCursorTimeOrStartOfTime(
-                      ofy().load().key(Cursor.createKey(key.cursor(), registry)).now());
+              Cursor cursor = ofy().load().key(Cursor.createKey(key.cursor(), registry)).now();
+              try {
+                loadAndCompare(cursor, tld);
+              } catch (Throwable t) {
+                logger.atSevere().withCause(t).log("Error comparing cursors.");
+              }
+              DateTime position = getCursorTimeOrStartOfTime(cursor);
               checkState(key.interval() != null, "Interval must be present");
               DateTime newPosition = key.watermark().plus(key.interval());
               if (!position.isBefore(newPosition)) {

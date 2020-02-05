@@ -15,6 +15,7 @@
 package google.registry.rde;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
@@ -91,6 +92,11 @@ class EscrowTaskRunner {
           logger.atInfo().log("TLD: %s", registry.getTld());
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
           Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
+          try {
+            loadAndCompare(cursor, registry.getTldStr());
+          } catch (Throwable t) {
+            logger.atSevere().withCause(t).log("Error comparing cursors.");
+          }
           final DateTime nextRequiredRun = (cursor == null ? startOfToday : cursor.getCursorTime());
           if (nextRequiredRun.isAfter(startOfToday)) {
             throw new NoContentException("Already completed");

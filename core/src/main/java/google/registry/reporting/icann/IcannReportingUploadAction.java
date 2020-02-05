@@ -21,10 +21,10 @@ import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.schema.cursor.CursorDao.loadAndCompareAll;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
@@ -54,7 +54,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
@@ -108,7 +107,7 @@ public final class IcannReportingUploadAction implements Runnable {
         () -> {
           ImmutableMap.Builder<String, Boolean> reportSummaryBuilder = new ImmutableMap.Builder<>();
 
-          ImmutableMap<Cursor, CursorInfo> cursors = loadCursors();
+          ImmutableMap<Cursor, String> cursors = loadCursors();
 
           // If cursor time is before now, upload the corresponding report
           cursors.entrySet().stream()
@@ -118,8 +117,8 @@ public final class IcannReportingUploadAction implements Runnable {
                     DateTime cursorTime = getCursorTimeOrStartOfTime(entry.getKey());
                     uploadReport(
                         cursorTime,
-                        entry.getValue().getType(),
-                        entry.getValue().getTld(),
+                        entry.getKey().getType(),
+                        entry.getValue(),
                         reportSummaryBuilder);
                   });
           // Send email of which reports were uploaded
@@ -206,7 +205,7 @@ public final class IcannReportingUploadAction implements Runnable {
   }
 
   /** Returns a map of each cursor to the CursorType and tld. */
-  private ImmutableMap<Cursor, CursorInfo> loadCursors() {
+  private ImmutableMap<Cursor, String> loadCursors() {
 
     ImmutableSet<Registry> registries = Registries.getTldEntitiesOfType(TldType.REAL);
 
@@ -220,11 +219,16 @@ public final class IcannReportingUploadAction implements Runnable {
     keys.addAll(transactionKeyMap.keySet());
 
     Map<Key<Cursor>, Cursor> cursorMap = ofy().load().keys(keys.build());
-    ImmutableMap.Builder<Cursor, CursorInfo> cursors = new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<Cursor, String> cursors = new ImmutableMap.Builder<>();
     defaultNullCursorsToNextMonthAndAddToMap(
         activityKeyMap, CursorType.ICANN_UPLOAD_ACTIVITY, cursorMap, cursors);
     defaultNullCursorsToNextMonthAndAddToMap(
         transactionKeyMap, CursorType.ICANN_UPLOAD_TX, cursorMap, cursors);
+    try {
+      loadAndCompareAll(cursors.build());
+    } catch (Throwable t) {
+      logger.atSevere().withCause(t).log("Error comparing cursors.");
+    }
     return cursors.build();
   }
 
@@ -242,7 +246,7 @@ public final class IcannReportingUploadAction implements Runnable {
       Map<Key<Cursor>, Registry> keyMap,
       CursorType type,
       Map<Key<Cursor>, Cursor> cursorMap,
-      ImmutableMap.Builder<Cursor, CursorInfo> cursors) {
+      ImmutableMap.Builder<Cursor, String> cursors) {
     keyMap.forEach(
         (key, registry) -> {
           // Cursor time is defaulted to the first of next month since a new tld will not yet have a
@@ -257,7 +261,7 @@ public final class IcannReportingUploadAction implements Runnable {
           if (!cursorMap.containsValue(cursor)) {
             tm().transact(() -> ofy().save().entity(cursor));
           }
-          cursors.put(cursor, CursorInfo.create(type, registry.getTldStr()));
+          cursors.put(cursor, registry.getTldStr());
         });
   }
 
@@ -305,15 +309,4 @@ public final class IcannReportingUploadAction implements Runnable {
         gcsFilename.getBucketName());
   }
 
-  @AutoValue
-  abstract static class CursorInfo {
-    static CursorInfo create(CursorType type, @Nullable String tld) {
-      return new AutoValue_IcannReportingUploadAction_CursorInfo(type, tld);
-    }
-
-    public abstract CursorType getType();
-
-    @Nullable
-    abstract String getTld();
-  }
 }
