@@ -75,20 +75,6 @@ public class Lock {
   /** The scope of a lock that is not specific to a single tld. */
   static final String GLOBAL = "GLOBAL";
 
-  /** Create a new {@link Lock} for the given resource name in the specified tld. */
-  private Lock(
-      String resourceName,
-      String tld,
-      String requestLogId,
-      DateTime acquiredTime,
-      DateTime expirationTime) {
-    this.resourceName = resourceName;
-    this.tld = tld;
-    this.requestLogId = requestLogId;
-    this.acquiredTime = DateTimeUtils.toZonedDateTime(acquiredTime);
-    this.expirationTime = DateTimeUtils.toZonedDateTime(expirationTime);
-  }
-
   /**
    * Validate input and create a new {@link Lock} for the given resource name in the specified tld.
    */

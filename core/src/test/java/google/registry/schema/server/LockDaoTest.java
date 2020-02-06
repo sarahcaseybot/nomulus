@@ -20,6 +20,7 @@ import static org.junit.Assert.assertThrows;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.FakeClock;
+import java.util.Optional;
 import javax.persistence.RollbackException;
 import org.joda.time.Duration;
 import org.junit.Rule;
@@ -42,9 +43,9 @@ public class LockDaoTest {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.saveNew(lock);
-    Lock returnedLock = LockDao.load("testResource", "tld");
-    assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
-    assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
+    Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
+    assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
+    assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
   }
 
   @Test
@@ -64,9 +65,9 @@ public class LockDaoTest {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.saveNew(lock);
-    Lock returnedLock = LockDao.load("testResource");
-    assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
-    assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
+    Optional<Lock> returnedLock = LockDao.load("testResource");
+    assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
+    assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
   }
 
   @Test
@@ -74,9 +75,9 @@ public class LockDaoTest {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.saveNew(lock);
-    Lock returnedLock = LockDao.load("testResource", "tld");
-    assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
-    assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
+    Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
+    assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
+    assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
   }
 
   @Test
@@ -84,15 +85,15 @@ public class LockDaoTest {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.saveNew(lock);
-    Lock returnedLock = LockDao.load("testResource");
-    assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
-    assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
+    Optional<Lock> returnedLock = LockDao.load("testResource");
+    assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
+    assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
   }
 
   @Test
   public void load_worksSuccesfullyLockDoesNotExist() {
-    Lock returnedLock = LockDao.load("testResource", "tld");
-    assertThat(returnedLock).isNull();
+    Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
+    assertThat(returnedLock.isPresent()).isFalse();
   }
 
   @Test
@@ -100,11 +101,11 @@ public class LockDaoTest {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.saveNew(lock);
-    Lock returnedLock = LockDao.load("testResource", "tld");
-    assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
+    Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
+    assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     LockDao.delete(lock);
     returnedLock = LockDao.load("testResource", "tld");
-    assertThat(returnedLock).isNull();
+    assertThat(returnedLock.isPresent()).isFalse();
   }
 
   @Test
@@ -112,19 +113,17 @@ public class LockDaoTest {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.saveNew(lock);
-    Lock returnedLock = LockDao.load("testResource");
-    assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
+    Optional<Lock> returnedLock = LockDao.load("testResource");
+    assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     LockDao.delete(lock);
     returnedLock = LockDao.load("testResource");
-    assertThat(returnedLock).isNull();
+    assertThat(returnedLock.isPresent()).isFalse();
   }
 
   @Test
-  public void delete_failsLockDoesntExist() {
+  public void delete_succeedsLockDoesntExist() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> LockDao.delete(lock));
-    assertThat(thrown.getMessage()).isEqualTo("attempt to create delete event with null entity");
+    LockDao.delete(lock);
   }
 }
