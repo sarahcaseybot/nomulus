@@ -41,7 +41,7 @@ public class LockDaoTest {
   public void save_worksSuccessfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.save(lock);
+    LockDao.saveNew(lock);
     Lock returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
@@ -51,10 +51,10 @@ public class LockDaoTest {
   public void save_failsWhenLockAlreadyExists() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.save(lock);
+    LockDao.saveNew(lock);
     Lock lock2 =
         Lock.create("testResource", "tld", "testLogId2", fakeClock.nowUtc(), Duration.millis(4));
-    RollbackException thrown = assertThrows(RollbackException.class, () -> LockDao.save(lock2));
+    RollbackException thrown = assertThrows(RollbackException.class, () -> LockDao.saveNew(lock2));
     assertThat(thrown.getCause().getCause().getCause().getMessage())
         .contains("duplicate key value violates unique constraint");
   }
@@ -63,7 +63,7 @@ public class LockDaoTest {
   public void save_worksSuccesfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.save(lock);
+    LockDao.saveNew(lock);
     Lock returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
@@ -73,7 +73,7 @@ public class LockDaoTest {
   public void load_worksSuccessfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.save(lock);
+    LockDao.saveNew(lock);
     Lock returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
@@ -83,7 +83,7 @@ public class LockDaoTest {
   public void load_worksSuccessfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.save(lock);
+    LockDao.saveNew(lock);
     Lock returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.requestLogId).isEqualTo(lock.requestLogId);
@@ -99,7 +99,7 @@ public class LockDaoTest {
   public void delete_worksSuccesfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.save(lock);
+    LockDao.saveNew(lock);
     Lock returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
     LockDao.delete(lock);
@@ -111,7 +111,7 @@ public class LockDaoTest {
   public void delete_worksSuccessfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.save(lock);
+    LockDao.saveNew(lock);
     Lock returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.expirationTime).isEqualTo(lock.expirationTime);
     LockDao.delete(lock);

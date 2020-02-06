@@ -14,7 +14,7 @@
 
 package google.registry.schema.server;
 
-import static com.google.common.flogger.util.Checks.checkNotNull;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.ImmutableObject;
 import google.registry.schema.server.Lock.LockId;
@@ -98,13 +98,14 @@ public class Lock {
       String requestLogId,
       DateTime acquiredTime,
       Duration leaseLength) {
-    this.resourceName = checkNotNull(resourceName, "The resource name cannot be null");
-    this.tld = checkNotNull(tld, "The tld cannot be null. For a global lock, use GLOBAL");
-    this.requestLogId = checkNotNull(requestLogId, "The requestLogId of the lock cannot be null");
+    this.resourceName = checkArgumentNotNull(resourceName, "The resource name cannot be null");
+    this.tld = checkArgumentNotNull(tld, "The tld cannot be null. For a global lock, use GLOBAL");
+    this.requestLogId =
+        checkArgumentNotNull(requestLogId, "The requestLogId of the lock cannot be null");
     this.acquiredTime =
         DateTimeUtils.toZonedDateTime(
-            checkNotNull(acquiredTime, "The acquired time of the lock cannot be null"));
-    checkNotNull(leaseLength, "The lease length of the lock cannot be null");
+            checkArgumentNotNull(acquiredTime, "The acquired time of the lock cannot be null"));
+    checkArgumentNotNull(leaseLength, "The lease length of the lock cannot be null");
     this.expirationTime = DateTimeUtils.toZonedDateTime(acquiredTime.plus(leaseLength));
   }
 
@@ -118,7 +119,7 @@ public class Lock {
       String requestLogId,
       DateTime acquiredTime,
       Duration leaseLength) {
-    checkNotNull(
+    checkArgumentNotNull(
         tld, "The tld cannot be null. To create a global lock, use the createGlobal method");
     return new Lock(resourceName, tld, requestLogId, acquiredTime, leaseLength);
   }
@@ -138,7 +139,7 @@ public class Lock {
     private LockId() {}
 
     LockId(String resourceName, String tld) {
-      this.resourceName = checkNotNull(resourceName, "The resource name cannot be null");
+      this.resourceName = checkArgumentNotNull(resourceName, "The resource name cannot be null");
       this.tld = tld;
     }
   }

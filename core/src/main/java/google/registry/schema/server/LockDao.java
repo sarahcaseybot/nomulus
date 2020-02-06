@@ -14,9 +14,9 @@
 
 package google.registry.schema.server;
 
-import static com.google.common.flogger.util.Checks.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.schema.server.Lock.GLOBAL;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.schema.server.Lock.LockId;
 
@@ -24,7 +24,7 @@ import google.registry.schema.server.Lock.LockId;
 public class LockDao {
 
   /** Saves the {@link Lock} object to CloudSQL. */
-  public static void save(Lock lock) {
+  public static void saveNew(Lock lock) {
     jpaTm()
         .transact(
             () -> {
@@ -34,15 +34,15 @@ public class LockDao {
 
   /** Loads a {@link Lock} object with the given resourceName and tld from CloudSQL. */
   public static Lock load(String resourceName, String tld) {
-    checkNotNull(resourceName, "The resource name of the lock to load cannot be null");
-    checkNotNull(tld, "The tld of the lock to load cannot be null");
+    checkArgumentNotNull(resourceName, "The resource name of the lock to load cannot be null");
+    checkArgumentNotNull(tld, "The tld of the lock to load cannot be null");
     return jpaTm()
         .transact(() -> jpaTm().getEntityManager().find(Lock.class, new LockId(resourceName, tld)));
   }
 
   /** Loads a global {@link Lock} object with the given resourceName from CloudSQL. */
   public static Lock load(String resourceName) {
-    checkNotNull(resourceName, "The resource name of the lock to load cannot be null");
+    checkArgumentNotNull(resourceName, "The resource name of the lock to load cannot be null");
     return jpaTm()
         .transact(
             () -> jpaTm().getEntityManager().find(Lock.class, new LockId(resourceName, GLOBAL)));
