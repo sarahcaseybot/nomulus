@@ -21,7 +21,6 @@ import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
-import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -49,7 +48,6 @@ final class ListCursorsCommand implements CommandWithRemoteApi {
   private boolean filterEscrowEnabled = false;
 
   private static final String OUTPUT_FMT = "%-20s   %-24s   %-24s";
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
   public void run() {
@@ -77,10 +75,8 @@ final class ListCursorsCommand implements CommandWithRemoteApi {
   }
 
   private static String renderLine(String tld, Optional<Cursor> cursor) {
-    try {
+    if (cursor.isPresent()) {
       loadAndCompare(cursor.get(), tld);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
     }
     return String.format(
         OUTPUT_FMT,

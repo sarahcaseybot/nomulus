@@ -204,7 +204,7 @@ public final class IcannReportingUploadAction implements Runnable {
         cursorTimeMinusMonth.monthOfYear().get());
   }
 
-  /** Returns a map of each cursor to the CursorType and tld. */
+  /** Returns a map of each cursor to the tld. */
   private ImmutableMap<Cursor, String> loadCursors() {
 
     ImmutableSet<Registry> registries = Registries.getTldEntitiesOfType(TldType.REAL);
@@ -220,15 +220,12 @@ public final class IcannReportingUploadAction implements Runnable {
 
     Map<Key<Cursor>, Cursor> cursorMap = ofy().load().keys(keys.build());
     ImmutableMap.Builder<Cursor, String> cursors = new ImmutableMap.Builder<>();
-    defaultNullCursorsToNextMonthAndAddToMap(
-        activityKeyMap, CursorType.ICANN_UPLOAD_ACTIVITY, cursorMap, cursors);
-    defaultNullCursorsToNextMonthAndAddToMap(
-        transactionKeyMap, CursorType.ICANN_UPLOAD_TX, cursorMap, cursors);
-    try {
-      loadAndCompareAll(cursors.build());
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    cursors.putAll(
+        defaultNullCursorsToNextMonthAndAddToMap(
+            activityKeyMap, CursorType.ICANN_UPLOAD_ACTIVITY, cursorMap));
+    cursors.putAll(
+        defaultNullCursorsToNextMonthAndAddToMap(
+            transactionKeyMap, CursorType.ICANN_UPLOAD_TX, cursorMap));
     return cursors.build();
   }
 
@@ -238,15 +235,13 @@ public final class IcannReportingUploadAction implements Runnable {
   }
 
   /**
-   * Populate the cursors map with the Cursor and CursorInfo for each key in the keyMap. If the key
-   * from the keyMap does not have an existing cursor, create a new cursor with a default cursorTime
-   * of the first of next month.
+   * Return a map with the Cursor and scope for each key in the keyMap. If the key from the keyMap
+   * does not have an existing cursor, create a new cursor with a default cursorTime of the first of
+   * next month.
    */
-  private void defaultNullCursorsToNextMonthAndAddToMap(
-      Map<Key<Cursor>, Registry> keyMap,
-      CursorType type,
-      Map<Key<Cursor>, Cursor> cursorMap,
-      ImmutableMap.Builder<Cursor, String> cursors) {
+  private ImmutableMap<Cursor, String> defaultNullCursorsToNextMonthAndAddToMap(
+      Map<Key<Cursor>, Registry> keyMap, CursorType type, Map<Key<Cursor>, Cursor> cursorMap) {
+    ImmutableMap.Builder<Cursor, String> cursors = new ImmutableMap.Builder<>();
     keyMap.forEach(
         (key, registry) -> {
           // Cursor time is defaulted to the first of next month since a new tld will not yet have a
@@ -263,6 +258,8 @@ public final class IcannReportingUploadAction implements Runnable {
           }
           cursors.put(cursor, registry.getTldStr());
         });
+    loadAndCompareAll(cursors.build(), type);
+    return cursors.build();
   }
 
   /** Don't retry when reports are already uploaded or can't be uploaded. */

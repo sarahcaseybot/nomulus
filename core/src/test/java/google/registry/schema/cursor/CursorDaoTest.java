@@ -328,13 +328,16 @@ public class CursorDaoTest {
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.WARNING,
-            "This cursor has a cursorTime of 1969-12-27T00:00:00.000Z in Datastore and"
-                + " 1970-01-01T00:00:00.000Z in Cloud SQL.");
+            "This cursor of type ICANN_UPLOAD_ACTIVITY with the scope tld has a cursorTime of"
+                + " 1969-12-27T00:00:00.000Z in Datastore and 1970-01-01T00:00:00.000Z in Cloud"
+                + " SQL.");
   }
 
   @Test
-  public void loadAndCompareAll_worksSuccessully() {
+  public void loadAndCompareAll_worksSuccessfully() {
     loggerToIntercept.addHandler(logHandler);
+
+    // Create Datastore cursors
     createTlds("tld", "foo");
     google.registry.model.common.Cursor cursor1 =
         google.registry.model.common.Cursor.create(
@@ -342,17 +345,92 @@ public class CursorDaoTest {
     google.registry.model.common.Cursor cursor2 =
         google.registry.model.common.Cursor.create(
             CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("foo"));
-    google.registry.model.common.Cursor cursor3 =
-        google.registry.model.common.Cursor.createGlobal(
-            CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+
+    // Save cursors to Cloud SQL
     ImmutableMap<google.registry.model.common.Cursor, String> cursors =
         ImmutableMap.<google.registry.model.common.Cursor, String>builder()
             .put(cursor1, "tld")
             .put(cursor2, "foo")
-            .put(cursor3, Cursor.GLOBAL)
             .build();
     CursorDao.saveCursors(cursors);
-    CursorDao.loadAndCompareAll(cursors);
+
+    CursorDao.loadAndCompareAll(cursors, CursorType.ICANN_UPLOAD_ACTIVITY);
+    assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.WARNING);
+  }
+
+  @Test
+  public void loadAndCompareAll_worksSuccessfullyMissingOne() {
+    loggerToIntercept.addHandler(logHandler);
+
+    // Create Datastore cursors
+    createTlds("tld", "foo", "lol");
+    google.registry.model.common.Cursor cursor1 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    google.registry.model.common.Cursor cursor2 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("foo"));
+
+    // Save Cursors to Cloud SQL
+    ImmutableMap.Builder<google.registry.model.common.Cursor, String> cursors =
+        ImmutableMap.<google.registry.model.common.Cursor, String>builder()
+            .put(cursor1, "tld")
+            .put(cursor2, "foo");
+    CursorDao.saveCursors(cursors.build());
+
+    // Create a new Datastore cursor that is not saved to Cloud SQL
+    google.registry.model.common.Cursor cursor3 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc().minusDays(4), Registry.get("lol"));
+
+    // Call loadAndCompareAll with all three Datastore cursors
+    CursorDao.loadAndCompareAll(
+        cursors.put(cursor3, "lol").build(), CursorType.ICANN_UPLOAD_ACTIVITY);
+
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            "Cursor of type ICANN_UPLOAD_ACTIVITY with the scope lol was not found in Cloud SQL.");
+  }
+
+  @Test
+  public void loadAndCompareAll_worksSuccessfullyOneWithWrongTime() {
+    loggerToIntercept.addHandler(logHandler);
+
+    // Create Datastore cursors
+    createTlds("tld", "foo");
+    google.registry.model.common.Cursor cursor1 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    google.registry.model.common.Cursor cursor2 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("foo"));
+
+    // Save Cursors to Cloud SQL
+    CursorDao.saveCursors(ImmutableMap.of(cursor1, "tld", cursor2, "foo"));
+
+    // Change time of first Datastore cursor, but don't save new time to Cloud SQL
+    google.registry.model.common.Cursor cursor3 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc().minusDays(4), Registry.get("tld"));
+
+    CursorDao.loadAndCompareAll(
+        ImmutableMap.of(cursor2, "foo", cursor3, "tld"), CursorType.ICANN_UPLOAD_ACTIVITY);
+
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            "This cursor of type ICANN_UPLOAD_ACTIVITY with the scope tld has a cursorTime of"
+                + " 1969-12-28T00:00:00.000Z in Datastore and 1970-01-01T00:00:00.000Z in Cloud"
+                + " SQL.");
+  }
+
+  @Test
+  public void loadAndCompareAll_worksSuccessfullyEmptyMap() {
+    loggerToIntercept.addHandler(logHandler);
+    CursorDao.loadAndCompareAll(ImmutableMap.of(), CursorType.ICANN_UPLOAD_ACTIVITY);
     assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.WARNING);
   }
 }

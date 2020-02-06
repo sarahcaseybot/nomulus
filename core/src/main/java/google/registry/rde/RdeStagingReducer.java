@@ -209,11 +209,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
             () -> {
               Registry registry = Registry.get(tld);
               Cursor cursor = ofy().load().key(Cursor.createKey(key.cursor(), registry)).now();
-              try {
-                loadAndCompare(cursor, tld);
-              } catch (Throwable t) {
-                logger.atSevere().withCause(t).log("Error comparing cursors.");
-              }
+              loadAndCompare(cursor, tld);
               DateTime position = getCursorTimeOrStartOfTime(cursor);
               checkState(key.interval() != null, "Interval must be present");
               DateTime newPosition = key.watermark().plus(key.interval());

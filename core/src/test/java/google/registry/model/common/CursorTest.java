@@ -26,7 +26,6 @@ import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.flogger.FluentLogger;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
@@ -41,7 +40,6 @@ import org.junit.Test;
 /** Unit tests for {@link Cursor}. */
 public class CursorTest extends EntityTestCase {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final FakeClock fakeClock = new FakeClock(DateTime.parse("2010-10-17TZ"));
 
   @Rule
@@ -63,11 +61,7 @@ public class CursorTest extends EntityTestCase {
                 .now()
                 .getCursorTime())
         .isEqualTo(time);
-    try {
-      loadAndCompare(cursor, "tld");
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    loadAndCompare(cursor, "tld");
   }
 
   @Test
@@ -76,11 +70,7 @@ public class CursorTest extends EntityTestCase {
     CursorDao.saveCursor(Cursor.createGlobal(RECURRING_BILLING, time), GLOBAL);
     assertThat(ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now().getCursorTime())
         .isEqualTo(time);
-    try {
-      loadAndCompare(Cursor.createGlobal(RECURRING_BILLING, time), GLOBAL);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    loadAndCompare(Cursor.createGlobal(RECURRING_BILLING, time), GLOBAL);
   }
 
   @Test
@@ -88,11 +78,7 @@ public class CursorTest extends EntityTestCase {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     CursorDao.saveCursor(Cursor.createGlobal(RECURRING_BILLING, time), GLOBAL);
     Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
-    try {
-      loadAndCompare(cursor, GLOBAL);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    loadAndCompare(cursor, GLOBAL);
     verifyIndexing(cursor);
   }
 

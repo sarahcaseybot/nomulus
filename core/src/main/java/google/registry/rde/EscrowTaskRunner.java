@@ -92,11 +92,7 @@ class EscrowTaskRunner {
           logger.atInfo().log("TLD: %s", registry.getTld());
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
           Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-          try {
-            loadAndCompare(cursor, registry.getTldStr());
-          } catch (Throwable t) {
-            logger.atSevere().withCause(t).log("Error comparing cursors.");
-          }
+          loadAndCompare(cursor, registry.getTldStr());
           final DateTime nextRequiredRun = (cursor == null ? startOfToday : cursor.getCursorTime());
           if (nextRequiredRun.isAfter(startOfToday)) {
             throw new NoContentException("Already completed");

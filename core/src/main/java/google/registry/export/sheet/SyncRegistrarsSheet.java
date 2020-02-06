@@ -34,7 +34,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
-import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
@@ -55,8 +54,6 @@ import org.joda.time.DateTime;
  */
 class SyncRegistrarsSheet {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
   @Inject Clock clock;
   @Inject SheetSynchronizer sheetSynchronizer;
   @Inject SyncRegistrarsSheet() {}
@@ -67,11 +64,7 @@ class SyncRegistrarsSheet {
    */
   boolean wereRegistrarsModified() {
     Cursor cursor = ofy().load().key(Cursor.createGlobalKey(SYNC_REGISTRAR_SHEET)).now();
-    try {
-      loadAndCompare(cursor, GLOBAL);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    loadAndCompare(cursor, GLOBAL);
     DateTime lastUpdateTime = (cursor == null) ? START_OF_TIME : cursor.getCursorTime();
     for (Registrar registrar : Registrar.loadAllCached()) {
       if (DateTimeUtils.isAtOrAfter(registrar.getLastUpdateTime(), lastUpdateTime)) {

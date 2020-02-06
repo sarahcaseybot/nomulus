@@ -135,11 +135,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
     Cursor cursor =
         ofy().load().key(Cursor.createKey(CursorType.RDE_STAGING, Registry.get(tld))).now();
-    try {
-      loadAndCompare(cursor, tld);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    loadAndCompare(cursor, tld);
     DateTime stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(stagingCursorTime, watermark)) {
       throw new NoContentException(
@@ -150,11 +146,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     }
     Cursor sftpCursor =
         ofy().load().key(Cursor.createKey(RDE_UPLOAD_SFTP, Registry.get(tld))).now();
-    try {
-      loadAndCompare(sftpCursor, tld);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    loadAndCompare(sftpCursor, tld);
     DateTime sftpCursorTime = getCursorTimeOrStartOfTime(sftpCursor);
     Duration timeSinceLastSftp = new Duration(sftpCursorTime, clock.nowUtc());
     if (timeSinceLastSftp.isShorterThan(sftpCooldown)) {

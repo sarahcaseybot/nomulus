@@ -21,7 +21,6 @@ import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -54,8 +53,6 @@ import org.joda.time.Duration;
  * This first deposit time will be set to Datastore in a transaction.
  */
 public final class PendingDepositChecker {
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject Clock clock;
   @Inject @Config("brdaDayOfWeek") int brdaDayOfWeek;
@@ -95,11 +92,7 @@ public final class PendingDepositChecker {
       }
       // Avoid creating a transaction unless absolutely necessary.
       Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-      try {
-        loadAndCompare(cursor, registry.getTldStr());
-      } catch (Throwable t) {
-        logger.atSevere().withCause(t).log("Error comparing cursors.");
-      }
+      loadAndCompare(cursor, registry.getTldStr());
       DateTime cursorValue = (cursor != null ? cursor.getCursorTime() : startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
         DateTime watermark = (cursor != null
@@ -120,11 +113,7 @@ public final class PendingDepositChecker {
     return tm().transact(
             () -> {
               Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-              try {
-                loadAndCompare(cursor, registry.getTldStr());
-              } catch (Throwable t) {
-                logger.atSevere().withCause(t).log("Error comparing cursors.");
-              }
+              loadAndCompare(cursor, registry.getTldStr());
               if (cursor != null) {
                 return cursor.getCursorTime();
               }

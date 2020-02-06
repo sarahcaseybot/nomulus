@@ -95,11 +95,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
   @Override
   public void run() {
     Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
-    try {
-      loadAndCompare(cursor, GLOBAL);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing cursors.");
-    }
+    loadAndCompare(cursor, GLOBAL);
     DateTime executeTime = clock.nowUtc();
     DateTime persistedCursorTime = (cursor == null ? START_OF_TIME : cursor.getCursorTime());
     DateTime cursorTime = cursorTimeParam.orElse(persistedCursorTime);
@@ -324,11 +320,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       tm().transact(
               () -> {
                 Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
-                try {
-                  loadAndCompare(cursor, GLOBAL);
-                } catch (Throwable t) {
-                  logger.atSevere().withCause(t).log("Error comparing cursors.");
-                }
+                loadAndCompare(cursor, GLOBAL);
                 DateTime currentCursorTime =
                     (cursor == null ? START_OF_TIME : cursor.getCursorTime());
                 if (!currentCursorTime.equals(expectedPersistedCursorTime)) {
