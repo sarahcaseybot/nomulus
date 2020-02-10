@@ -26,6 +26,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /** Data access object class for {@link Cursor}. */
 public class CursorDao {
@@ -133,12 +134,14 @@ public class CursorDao {
   }
 
   /**
-   * This takes in a cursor from Datastore and checks to see if it exists in Cloud SQL and has the
-   * same value. If a difference is detected, or the Cloud SQL cursor does not exist, a warning is
-   * logged.
+   * Loads in cursor from Cloud SQL and compares it to the Datastore cursor
+   *
+   * <p>This takes in a cursor from Datastore and checks to see if it exists in Cloud SQL and has
+   * the same value. If a difference is detected, or the Cloud SQL cursor does not exist, a warning
+   * is logged.
    */
   public static void loadAndCompare(
-      google.registry.model.common.Cursor datastoreCursor, String scope) {
+      @Nullable google.registry.model.common.Cursor datastoreCursor, String scope) {
     if (datastoreCursor == null) {
       return;
     }
@@ -152,8 +155,10 @@ public class CursorDao {
   }
 
   /**
-   * This takes in cursors from Datastore and checks to see if they exists in Cloud SQL and have the
-   * same value. If a difference is detected, or a Cloud SQL cursor does not exist, a warning is
+   * Loads in all cursors of a given type from Cloud SQL and compares them to Datastore
+   *
+   * <p>This takes in cursors from Datastore and checks to see if they exists in Cloud SQL and have
+   * the same value. If a difference is detected, or a Cloud SQL cursor does not exist, a warning is
    * logged.
    */
   public static void loadAndCompareAll(
@@ -177,7 +182,9 @@ public class CursorDao {
   }
 
   private static void compare(
-      google.registry.model.common.Cursor datastoreCursor, Cursor cloudSqlCursor, String scope) {
+      google.registry.model.common.Cursor datastoreCursor,
+      @Nullable Cursor cloudSqlCursor,
+      String scope) {
     if (cloudSqlCursor == null) {
       logger.atWarning().log(
           String.format(
