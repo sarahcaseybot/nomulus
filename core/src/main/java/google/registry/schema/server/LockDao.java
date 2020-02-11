@@ -34,8 +34,8 @@ public class LockDao {
   }
 
   /**
-   * Loads a {@link Lock} object with the given resourceName and tld from Cloud SQL. The returned
-   * Optional<Lock> will be empty if the lock does not exist in Cloud SQL.
+   * Loads and returns a {@link Lock} object with the given resourceName and tld from Cloud SQL if
+   * it exists, else empty.
    */
   public static Optional<Lock> load(String resourceName, String tld) {
     checkArgumentNotNull(resourceName, "The resource name of the lock to load cannot be null");
@@ -47,8 +47,8 @@ public class LockDao {
   }
 
   /**
-   * Loads a global {@link Lock} object with the given resourceName from Cloud SQL. The returned
-   * Optional<Lock> will be empty if the lock does not exist in Cloud SQL.
+   * Loads a global {@link Lock} object with the given resourceName from Cloud SQL if it exists,
+   * else empty.
    */
   public static Optional<Lock> load(String resourceName) {
     checkArgumentNotNull(resourceName, "The resource name of the lock to load cannot be null");
@@ -60,7 +60,7 @@ public class LockDao {
   }
 
   /**
-   * Removes the given {@link Lock} object from Cloud SQL. This method is idempotent and will simply
+   * Deletes the given {@link Lock} object from Cloud SQL. This method is idempotent and will simply
    * return if the lock has already been deleted.
    */
   public static void delete(Lock lock) {
