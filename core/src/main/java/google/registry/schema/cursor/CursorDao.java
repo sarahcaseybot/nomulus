@@ -98,8 +98,10 @@ public class CursorDao {
     try {
       Cursor cloudSqlCursor = Cursor.create(type, scope, cursor.getCursorTime());
       save(cloudSqlCursor);
+      logger.atInfo().log(
+          "Rolled forward CloudSQL cursor for %s to %s", scope, cursor.getCursorTime());
     } catch (Exception e) {
-      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL.");
+      logger.atSevere().withCause(e).log("Error saving cursor for %s to Cloud SQL.", scope);
     }
   }
 
