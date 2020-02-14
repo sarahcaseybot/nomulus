@@ -18,11 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.LogsSubject.assertAboutLogs;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.testing.TestLogHandler;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.transaction.JpaTestRules;
@@ -30,8 +28,6 @@ import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCo
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,9 +38,6 @@ import org.junit.runners.JUnit4;
 public class CursorDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
-
-  private final TestLogHandler logHandler = new TestLogHandler();
-  private final Logger loggerToIntercept = Logger.getLogger(CursorDao.class.getCanonicalName());
 
   @Rule
   public final JpaIntegrationWithCoverageRule jpaRule =
@@ -187,27 +180,6 @@ public class CursorDaoTest {
             .key(google.registry.model.common.Cursor.createGlobalKey(CursorType.RECURRING_BILLING))
             .now();
     assertThat(createdCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
-    assertThat(cursor).isEqualTo(dataStoreCursor);
-  }
-
-  @Test
-  public void saveCursor_logsErrorWhenSaveToCloudSqlFails() {
-    loggerToIntercept.addHandler(logHandler);
-    createTld("tld");
-    google.registry.model.common.Cursor cursor =
-        google.registry.model.common.Cursor.create(
-            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
-    CursorDao.saveCursor(cursor, null);
-    assertAboutLogs()
-        .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.SEVERE, "Error saving cursor for null to Cloud SQL.");
-    google.registry.model.common.Cursor dataStoreCursor =
-        ofy()
-            .load()
-            .key(
-                google.registry.model.common.Cursor.createKey(
-                    CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
-            .now();
     assertThat(cursor).isEqualTo(dataStoreCursor);
   }
 
