@@ -18,9 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.testing.TestLogHandler;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.transaction.JpaTestRules;
@@ -28,6 +30,8 @@ import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCo
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +42,9 @@ import org.junit.runners.JUnit4;
 public class CursorDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
+
+  private final TestLogHandler logHandler = new TestLogHandler();
+  private final Logger loggerToIntercept = Logger.getLogger(CursorDao.class.getCanonicalName());
 
   @Rule
   public final JpaIntegrationWithCoverageRule jpaRule =

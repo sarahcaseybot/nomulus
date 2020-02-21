@@ -95,11 +95,12 @@ public class CursorDao {
   public static void saveCursor(google.registry.model.common.Cursor cursor, String scope) {
     tm().transact(() -> ofy().save().entity(cursor));
     CursorType type = cursor.getType();
+    checkNotNull(scope, "The scope of the cursor cannot be null");
     Cursor cloudSqlCursor = Cursor.create(type, scope, cursor.getCursorTime());
     try {
       save(cloudSqlCursor);
       logger.atInfo().log(
-          "Rolled forward CloudSQL cursor for %s to %s", scope, cursor.getCursorTime());
+          "Rolled forward CloudSQL cursor for %s to %s.", scope, cursor.getCursorTime());
     } catch (Exception e) {
       logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL: %s.", cloudSqlCursor);
     }
