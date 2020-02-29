@@ -16,6 +16,7 @@ package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 
@@ -210,17 +211,23 @@ public class Lock extends ImmutableObject implements Serializable {
 
                   // create and save the lock to Cloud SQL
                   try {
-                    google.registry.schema.server.Lock cloudSqlLock =
-                        google.registry.schema.server.Lock.create(
-                            resourceName,
-                            Optional.ofNullable(tld).orElse("GLOBAL"),
-                            requestStatusChecker.getLogId(),
-                            now,
-                            leaseLength);
-                    // cloudSqlLock should not already exist in Cloud SQL, but call delete just in
-                    // case
-                    LockDao.delete(cloudSqlLock);
-                    LockDao.saveNew(cloudSqlLock);
+                    jpaTm()
+                        .transact(
+                            () -> {
+                              google.registry.schema.server.Lock cloudSqlLock =
+                                  google.registry.schema.server.Lock.create(
+                                      resourceName,
+                                      Optional.ofNullable(tld).orElse("GLOBAL"),
+                                      requestStatusChecker.getLogId(),
+                                      now,
+                                      leaseLength);
+                              // cloudSqlLock should not already exist in Cloud SQL, but call delete
+                              // just in case
+                              // TODO: Remove this delete once dual read is added
+                              LockDao.delete(
+                                  resourceName, Optional.ofNullable(tld).orElse("GLOBAL"));
+                              LockDao.saveNew(cloudSqlLock);
+                            });
                   } catch (Exception e) {
                     logger.atSevere().withCause(e).log(
                         "Error saving lock to Cloud SQL: %s", newLock);
@@ -252,14 +259,11 @@ public class Lock extends ImmutableObject implements Serializable {
 
                 // Remove the lock from Cloud SQL
                 try {
-                  google.registry.schema.server.Lock cloudSqlLock =
-                      google.registry.schema.server.Lock.create(
-                          resourceName,
-                          Optional.ofNullable(tld).orElse("GLOBAL"),
-                          requestLogId,
-                          acquiredTime,
-                          new Duration(acquiredTime, expirationTime));
-                  LockDao.delete(cloudSqlLock);
+                  jpaTm()
+                      .transact(
+                          () ->
+                              LockDao.delete(
+                                  resourceName, Optional.ofNullable(tld).orElse("GLOBAL")));
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Error deleting lock from Cloud SQL: %s", loadedLock);
