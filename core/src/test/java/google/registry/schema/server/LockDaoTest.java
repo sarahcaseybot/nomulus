@@ -134,7 +134,7 @@ public class LockDaoTest {
     google.registry.model.server.Lock datastoreLock =
         google.registry.model.server.Lock.create(
             "resourceName", "tld", "id", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.compare(datastoreLock, Optional.empty());
+    LockDao.compare(Optional.of(datastoreLock), Optional.empty());
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
@@ -147,7 +147,7 @@ public class LockDaoTest {
     loggerToIntercept.addHandler(logHandler);
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.compare(null, Optional.of(lock));
+    LockDao.compare(Optional.ofNullable(null), Optional.of(lock));
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
@@ -163,7 +163,7 @@ public class LockDaoTest {
     google.registry.model.server.Lock datastoreLock =
         google.registry.model.server.Lock.create(
             "testResource", "tld", "wrong", fakeClock.nowUtc().minusDays(1), Duration.millis(3));
-    LockDao.compare(datastoreLock, Optional.of(cloudSqlLock));
+    LockDao.compare(Optional.of(datastoreLock), Optional.of(cloudSqlLock));
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
@@ -176,7 +176,7 @@ public class LockDaoTest {
         .hasLogAtLevelWithMessage(
             Level.WARNING,
             String.format(
-                "Datastore lock acqiuiredTime of 1969-12-31T00:00:00.000Z does not equal Cloud SQL"
+                "Datastore lock acquiredTime of 1969-12-31T00:00:00.000Z does not equal Cloud SQL"
                     + " lock acquiredTime of 1970-01-01T00:00:00.000Z"));
     assertAboutLogs()
         .that(logHandler)

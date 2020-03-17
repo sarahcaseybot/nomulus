@@ -203,10 +203,11 @@ public class Lock extends ImmutableObject implements Serializable {
                             () -> {
                               Optional<google.registry.schema.server.Lock> cloudSqlLockOptional =
                                   LockDao.load(resourceName, tld);
-                              LockDao.compare(lock, cloudSqlLockOptional);
+                              LockDao.compare(Optional.ofNullable(lock), cloudSqlLockOptional);
                             });
                   } catch (Exception e) {
-                    logger.atSevere().log("Issue loading and comparing lock from Cloud SQL");
+                    logger.atSevere().withCause(e).log(
+                        "Issue loading and comparing lock from Cloud SQL");
                   }
                   if (lock != null) {
                     logger.atInfo().log(
@@ -275,10 +276,11 @@ public class Lock extends ImmutableObject implements Serializable {
                         () -> {
                           Optional<google.registry.schema.server.Lock> cloudSqlLockOptional =
                               LockDao.load(resourceName, tld);
-                          LockDao.compare(loadedLock, cloudSqlLockOptional);
+                          LockDao.compare(Optional.ofNullable(loadedLock), cloudSqlLockOptional);
                         });
               } catch (Exception e) {
-                logger.atSevere().log("Issue loading and comparing lock from Cloud SQL");
+                logger.atSevere().withCause(e).log(
+                    "Issue loading and comparing lock from Cloud SQL");
               }
               if (Lock.this.equals(loadedLock)) {
                 // Use noBackupOfy() so that we don't create a commit log entry for deleting the

@@ -86,8 +86,9 @@ public class LockDao {
    * a warning if there are any differences.
    */
   public static void compare(
-      google.registry.model.server.Lock datastoreLock, Optional<Lock> cloudSqlLockOptional) {
-    if (datastoreLock == null) {
+      Optional<google.registry.model.server.Lock> datastoreLockOptional,
+      Optional<Lock> cloudSqlLockOptional) {
+    if (!datastoreLockOptional.isPresent()) {
       cloudSqlLockOptional.ifPresent(
           value ->
               logger.atWarning().log(
@@ -97,6 +98,7 @@ public class LockDao {
       return;
     }
     google.registry.schema.server.Lock cloudSqlLock;
+    google.registry.model.server.Lock datastoreLock = datastoreLockOptional.get();
     if (cloudSqlLockOptional.isPresent()) {
       cloudSqlLock = cloudSqlLockOptional.get();
       if (!datastoreLock.getRequestLogId().equals(cloudSqlLock.requestLogId)) {
@@ -111,7 +113,7 @@ public class LockDao {
           .equals(DateTimeUtils.toJodaDateTime(cloudSqlLock.acquiredTime))) {
         logger.atWarning().log(
             String.format(
-                "Datastore lock acqiuiredTime of %s does not equal Cloud SQL lock acquiredTime of"
+                "Datastore lock acquiredTime of %s does not equal Cloud SQL lock acquiredTime of"
                     + " %s",
                 datastoreLock.getAcquiredTime(),
                 DateTimeUtils.toJodaDateTime(cloudSqlLock.acquiredTime)));
