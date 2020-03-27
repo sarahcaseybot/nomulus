@@ -41,8 +41,8 @@ import org.joda.time.Duration;
 /**
  * A lock on some shared resource.
  *
- * <p>Locks are either specific to a tld or global to the entire system, in which case a tld of
- * null is used.
+ * <p>Locks are either specific to a tld or global to the entire system, in which case a tld of null
+ * is used in Datastore and "GLOBAL" is used in Cloud SQL.
  *
  * <p>This is the "barebone" lock implementation, that requires manual locking and unlocking. For
  * safe calls that automatically lock and unlock, see LockHandler.
