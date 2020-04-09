@@ -32,12 +32,9 @@ import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.schema.server.LockDao;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
-import google.registry.util.Retrier;
-import google.registry.util.SystemSleeper;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.RollbackException;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -56,7 +53,6 @@ public class Lock extends ImmutableObject implements Serializable {
 
   private static final long serialVersionUID = 756397280691684645L;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
 
   /** Disposition of locking, for monitoring. */
   enum LockState { IN_USE, FREE, TIMED_OUT, OWNER_DIED }
@@ -253,15 +249,11 @@ public class Lock extends ImmutableObject implements Serializable {
                           google.registry.schema.server.Lock.create(
                               resourceName, tld, requestStatusChecker.getLogId(), now, leaseLength);
                     }
-                    retrier.callWithRetry(
-                        () -> {
-                          jpaTm()
-                              .transact(
-                                  () -> {
-                                    LockDao.save(cloudSqlLock);
-                                  });
-                        },
-                        RollbackException.class);
+                    jpaTm()
+                        .transact(
+                            () -> {
+                              LockDao.save(cloudSqlLock);
+                            });
                   } catch (Exception e) {
                     logger.atSevere().withCause(e).log(
                         "Error saving lock to Cloud SQL: %s", newLock);
@@ -309,19 +301,15 @@ public class Lock extends ImmutableObject implements Serializable {
 
                 // Remove the lock from Cloud SQL
                 try {
-                  retrier.callWithRetry(
-                      () -> {
-                        jpaTm()
-                            .transact(
-                                () -> {
-                                  if (tld == null) {
-                                    LockDao.delete(resourceName);
-                                  } else {
-                                    LockDao.delete(resourceName, tld);
-                                  }
-                                });
-                      },
-                      RollbackException.class);
+                  jpaTm()
+                      .transact(
+                          () -> {
+                            if (tld == null) {
+                              LockDao.delete(resourceName);
+                            } else {
+                              LockDao.delete(resourceName, tld);
+                            }
+                          });
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Error deleting lock from Cloud SQL: %s", loadedLock);

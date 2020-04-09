@@ -26,6 +26,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
+import google.registry.util.Retrier;
+import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -34,6 +36,7 @@ import java.util.stream.StreamSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.OptimisticLockException;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -45,6 +48,7 @@ import org.joda.time.DateTime;
 public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
@@ -95,9 +99,13 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       txn.begin();
       txnInfo.inTransaction = true;
       txnInfo.transactionTime = clock.nowUtc();
-      T result = work.get();
-      txn.commit();
-      return result;
+      return retrier.callWithRetry(
+          () -> {
+            T result = work.get();
+            txn.commit();
+            return result;
+          },
+          OptimisticLockException.class);
     } catch (RuntimeException e) {
       try {
         txn.rollback();

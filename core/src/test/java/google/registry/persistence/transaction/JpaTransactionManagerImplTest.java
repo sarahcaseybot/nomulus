@@ -18,6 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
@@ -30,6 +35,7 @@ import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
+import javax.persistence.OptimisticLockException;
 import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 import org.junit.Rule;
@@ -337,6 +343,16 @@ public class JpaTransactionManagerImplTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> jpaTm().transact(() -> jpaTm().assertDelete(theEntityKey)));
+  }
+
+  @Test
+  public void transact_retriesOptimisticLockExceptions() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any());
+    spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        RuntimeException.class, () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
+    verify(spyJpaTm, times(3)).delete(theEntityKey);
   }
 
   private void insertPerson(int age) {
