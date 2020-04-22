@@ -21,6 +21,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.converter.StringMapDescriptor.StringMap;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 import org.joda.time.DateTime;
 
@@ -38,7 +39,7 @@ public abstract class TimedTransitionPropertyConverterBase<K, V extends TimedTra
   abstract Class<V> getTimedTransitionSubclass();
 
   @Override
-  public StringMap convertToDatabaseColumn(TimedTransitionProperty<K, V> attribute) {
+  public StringMap convertToDatabaseColumn(@Nullable TimedTransitionProperty<K, V> attribute) {
     return attribute == null
         ? null
         : StringMap.create(
@@ -48,7 +49,7 @@ public abstract class TimedTransitionPropertyConverterBase<K, V extends TimedTra
   }
 
   @Override
-  public TimedTransitionProperty<K, V> convertToEntityAttribute(StringMap dbData) {
+  public TimedTransitionProperty<K, V> convertToEntityAttribute(@Nullable StringMap dbData) {
     if (dbData == null) {
       return null;
     }
