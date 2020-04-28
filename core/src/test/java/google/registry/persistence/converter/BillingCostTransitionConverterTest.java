@@ -45,12 +45,12 @@ public class BillingCostTransitionConverterTest {
           .withEntityClass(TestEntity.class)
           .buildUnitTestRule();
 
-  private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.0Z");
-
   private static final ImmutableSortedMap<DateTime, Money> values =
       ImmutableSortedMap.of(
-          START_OF_TIME, Money.of(USD, 8),
-          DATE_1, Money.of(USD, 0));
+          START_OF_TIME,
+          Money.of(USD, 8),
+          DateTime.parse("2001-01-01T00:00:00.0Z"),
+          Money.of(USD, 0));
 
   @Test
   public void roundTripConversion_returnsSameTimedTransitionProperty() {

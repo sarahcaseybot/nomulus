@@ -44,16 +44,16 @@ public class TldStateTransitionConverterTest {
           .withEntityClass(TestEntity.class)
           .buildUnitTestRule();
 
-  private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.0Z");
-  private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.0Z");
-  private static final DateTime DATE_3 = DateTime.parse("2003-01-01T00:00:00.0Z");
-
   private static final ImmutableSortedMap<DateTime, TldState> values =
       ImmutableSortedMap.of(
-          START_OF_TIME, TldState.PREDELEGATION,
-          DATE_1, TldState.QUIET_PERIOD,
-          DATE_2, TldState.PDT,
-          DATE_3, TldState.GENERAL_AVAILABILITY);
+          START_OF_TIME,
+          TldState.PREDELEGATION,
+          DateTime.parse("2001-01-01T00:00:00.0Z"),
+          TldState.QUIET_PERIOD,
+          DateTime.parse("2002-01-01T00:00:00.0Z"),
+          TldState.PDT,
+          DateTime.parse("2003-01-01T00:00:00.0Z"),
+          TldState.GENERAL_AVAILABILITY);
 
   @Test
   public void roundTripConversion_returnsSameTimedTransitionProperty() {

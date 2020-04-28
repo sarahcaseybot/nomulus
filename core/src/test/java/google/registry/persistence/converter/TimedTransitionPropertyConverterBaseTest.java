@@ -49,13 +49,13 @@ public class TimedTransitionPropertyConverterBaseTest {
   private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.000Z");
   private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.000Z");
 
-  private static final ImmutableSortedMap<DateTime, Key> VALUES =
+  private static final ImmutableSortedMap<DateTime, String> VALUES =
       ImmutableSortedMap.of(
-          START_OF_TIME, new Key("key1"),
-          DATE_1, new Key("key2"),
-          DATE_2, new Key("key3"));
+          START_OF_TIME, "val1",
+          DATE_1, "val2",
+          DATE_2, "val3");
 
-  private static final TimedTransitionProperty<Key, TestTransition> TIMED_TRANSITION_PROPERTY =
+  private static final TimedTransitionProperty<String, TestTransition> TIMED_TRANSITION_PROPERTY =
       TimedTransitionProperty.fromValueMap(VALUES, TestTransition.class);
 
   @Test
@@ -74,8 +74,7 @@ public class TimedTransitionPropertyConverterBaseTest {
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
-    ImmutableSortedMap<DateTime, Key> newValues =
-        ImmutableSortedMap.of(START_OF_TIME, new Key("key4"));
+    ImmutableSortedMap<DateTime, String> newValues = ImmutableSortedMap.of(START_OF_TIME, "val4");
     persisted.property = TimedTransitionProperty.fromValueMap(newValues, TestTransition.class);
     jpaTm().transact(() -> jpaTm().getEntityManager().merge(persisted));
     TestEntity updated =
@@ -96,23 +95,23 @@ public class TimedTransitionPropertyConverterBaseTest {
   public void testNativeQuery_succeeds() {
     executeNativeQuery(
         "INSERT INTO \"TestEntity\" (name, property) VALUES ('id',"
-            + " 'key1=>1970-01-01T00:00:00.000Z, key2=>2001-01-01T00:00:00.000Z')");
+            + " 'val1=>1970-01-01T00:00:00.000Z, val2=>2001-01-01T00:00:00.000Z')");
 
     assertThat(
             getSingleResultFromNativeQuery(
-                "SELECT property -> 'key1' FROM \"TestEntity\" WHERE name = 'id'"))
+                "SELECT property -> 'val1' FROM \"TestEntity\" WHERE name = 'id'"))
         .isEqualTo(START_OF_TIME.toString());
     assertThat(
             getSingleResultFromNativeQuery(
-                "SELECT property -> 'key2' FROM \"TestEntity\" WHERE name = 'id'"))
+                "SELECT property -> 'val2' FROM \"TestEntity\" WHERE name = 'id'"))
         .isEqualTo(DATE_1.toString());
 
     executeNativeQuery(
-        "UPDATE \"TestEntity\" SET property = 'key3=>2002-01-01T00:00:00.000Z' WHERE name = 'id'");
+        "UPDATE \"TestEntity\" SET property = 'val3=>2002-01-01T00:00:00.000Z' WHERE name = 'id'");
 
     assertThat(
             getSingleResultFromNativeQuery(
-                "SELECT property -> 'key3' FROM \"TestEntity\" WHERE name = 'id'"))
+                "SELECT property -> 'val3' FROM \"TestEntity\" WHERE name = 'id'"))
         .isEqualTo(DATE_2.toString());
 
     executeNativeQuery("DELETE FROM \"TestEntity\" WHERE name = 'id'");
@@ -121,7 +120,7 @@ public class TimedTransitionPropertyConverterBaseTest {
         NoResultException.class,
         () ->
             getSingleResultFromNativeQuery(
-                "SELECT property -> 'key3' FROM \"TestEntity\" WHERE name = 'id'"));
+                "SELECT property -> 'val3' FROM \"TestEntity\" WHERE name = 'id'"));
   }
 
   private static Object getSingleResultFromNativeQuery(String sql) {
@@ -134,35 +133,27 @@ public class TimedTransitionPropertyConverterBaseTest {
         .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
   }
 
-  private static class Key extends ImmutableObject {
-    private String key;
-
-    private Key(String key) {
-      this.key = key;
-    }
-  }
-
-  public static class TestTransition extends TimedTransition<Key> {
-    private Key transition;
+  public static class TestTransition extends TimedTransition<String> {
+    private String transition;
 
     @Override
-    public Key getValue() {
+    public String getValue() {
       return transition;
     }
 
     @Override
-    protected void setValue(Key transition) {
+    protected void setValue(String transition) {
       this.transition = transition;
     }
   }
 
   @Converter(autoApply = true)
   private static class TestTimedTransitionPropertyConverter
-      extends TimedTransitionPropertyConverterBase<Key, TestTransition> {
+      extends TimedTransitionPropertyConverterBase<String, TestTransition> {
 
     @Override
-    Map.Entry<DateTime, Key> convertToEntityMapEntry(Map.Entry<String, String> entry) {
-      return Maps.immutableEntry(DateTime.parse(entry.getKey()), new Key(entry.getValue()));
+    Map.Entry<DateTime, String> convertToEntityMapEntry(Map.Entry<String, String> entry) {
+      return Maps.immutableEntry(DateTime.parse(entry.getKey()), entry.getValue());
     }
 
     @Override
@@ -172,7 +163,7 @@ public class TimedTransitionPropertyConverterBaseTest {
 
     @Override
     Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<DateTime, TestTransition> entry) {
-      return Maps.immutableEntry(entry.getKey().toString(), entry.getValue().transition.key);
+      return Maps.immutableEntry(entry.getKey().toString(), entry.getValue().getValue());
     }
   }
 
@@ -181,11 +172,11 @@ public class TimedTransitionPropertyConverterBaseTest {
 
     @Id String name = "id";
 
-    TimedTransitionProperty<Key, TestTransition> property;
+    TimedTransitionProperty<String, TestTransition> property;
 
     private TestEntity() {}
 
-    private TestEntity(TimedTransitionProperty<Key, TestTransition> timedTransitionProperty) {
+    private TestEntity(TimedTransitionProperty<String, TestTransition> timedTransitionProperty) {
       this.property = timedTransitionProperty;
     }
   }
