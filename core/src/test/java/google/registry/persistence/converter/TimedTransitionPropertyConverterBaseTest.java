@@ -25,26 +25,25 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.util.Map;
 import javax.persistence.Converter;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NoResultException;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TimedTransitionPropertyConverterBase}. */
-@RunWith(JUnit4.class)
 public class TimedTransitionPropertyConverterBaseTest {
-  @Rule
-  public final JpaTestRules.JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpa =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestTimedTransitionPropertyConverter.class, TestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.000Z");
   private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.000Z");
@@ -59,7 +58,7 @@ public class TimedTransitionPropertyConverterBaseTest {
       TimedTransitionProperty.fromValueMap(VALUES, TestTransition.class);
 
   @Test
-  public void roundTripConversion_returnsSameTimedTransitionProperty() {
+  void roundTripConversion_returnsSameTimedTransitionProperty() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -68,7 +67,7 @@ public class TimedTransitionPropertyConverterBaseTest {
   }
 
   @Test
-  public void testUpdateColumn_succeeds() {
+  void testUpdateColumn_succeeds() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -83,7 +82,7 @@ public class TimedTransitionPropertyConverterBaseTest {
   }
 
   @Test
-  public void testNullValue_writesAndReadsNullSuccessfully() {
+  void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -92,7 +91,7 @@ public class TimedTransitionPropertyConverterBaseTest {
   }
 
   @Test
-  public void testNativeQuery_succeeds() {
+  void testNativeQuery_succeeds() {
     executeNativeQuery(
         "INSERT INTO \"TestEntity\" (name, property) VALUES ('id',"
             + " 'val1=>1970-01-01T00:00:00.000Z, val2=>2001-01-01T00:00:00.000Z')");
@@ -128,9 +127,8 @@ public class TimedTransitionPropertyConverterBaseTest {
         .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).getSingleResult());
   }
 
-  private static Object executeNativeQuery(String sql) {
-    return jpaTm()
-        .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
+  private static void executeNativeQuery(String sql) {
+    jpaTm().transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
   }
 
   public static class TestTransition extends TimedTransition<String> {

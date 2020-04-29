@@ -24,25 +24,22 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldStateTransition;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TldStateTransitionConverter}. */
-@RunWith(JUnit4.class)
 public class TldStateTransitionConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpa =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final ImmutableSortedMap<DateTime, TldState> values =
       ImmutableSortedMap.of(
@@ -56,7 +53,7 @@ public class TldStateTransitionConverterTest {
           TldState.GENERAL_AVAILABILITY);
 
   @Test
-  public void roundTripConversion_returnsSameTimedTransitionProperty() {
+  void roundTripConversion_returnsSameTimedTransitionProperty() {
     TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty =
         TimedTransitionProperty.fromValueMap(values, TldStateTransition.class);
     TestEntity testEntity = new TestEntity(timedTransitionProperty);

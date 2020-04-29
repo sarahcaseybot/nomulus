@@ -24,26 +24,23 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.registry.Registry.BillingCostTransition;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BillingCostTransitionConverter}. */
-@RunWith(JUnit4.class)
 public class BillingCostTransitionConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpa =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final ImmutableSortedMap<DateTime, Money> values =
       ImmutableSortedMap.of(
@@ -53,7 +50,7 @@ public class BillingCostTransitionConverterTest {
           Money.of(USD, 0));
 
   @Test
-  public void roundTripConversion_returnsSameTimedTransitionProperty() {
+  void roundTripConversion_returnsSameTimedTransitionProperty() {
     TimedTransitionProperty<Money, BillingCostTransition> timedTransitionProperty =
         TimedTransitionProperty.fromValueMap(values, BillingCostTransition.class);
     TestEntity testEntity = new TestEntity(timedTransitionProperty);

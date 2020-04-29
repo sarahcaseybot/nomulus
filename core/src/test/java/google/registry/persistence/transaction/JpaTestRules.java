@@ -73,6 +73,25 @@ public class JpaTestRules {
     }
   }
 
+  /** JUnit extension that adapts {@link JpaUnitTestRule} for JUnit5. */
+  public static final class JpaUnitTestExtension implements BeforeEachCallback, AfterEachCallback {
+    private final JpaUnitTestRule unitTestRule;
+
+    private JpaUnitTestExtension(JpaUnitTestRule unitTestRule) {
+      this.unitTestRule = unitTestRule;
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+      unitTestRule.after();
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext context) throws Exception {
+      unitTestRule.before();
+    }
+  }
+
   /**
    * Junit rule for member classes of {@link
    * google.registry.schema.integration.SqlIntegrationTestSuite}. In addition to providing a
@@ -205,6 +224,14 @@ public class JpaTestRules {
           Optional.ofNullable(initScript),
           ImmutableList.copyOf(extraEntityClasses),
           ImmutableMap.copyOf(userProperties));
+    }
+
+    /**
+     * Builds a {@link JpaUnitTestExtension} instance for JUnit 5 from a {@link JpaUnitTestRule}
+     * instance.
+     */
+    public JpaUnitTestExtension buildUnitTestExtension() {
+      return new JpaUnitTestExtension(buildUnitTestRule());
     }
   }
 }
