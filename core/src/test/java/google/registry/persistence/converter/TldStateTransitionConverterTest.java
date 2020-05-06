@@ -24,7 +24,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldStateTransition;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
@@ -35,11 +35,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TldStateTransitionConverterTest {
 
   @RegisterExtension
-  public final JpaUnitTestExtension jpa =
+  public final JpaUnitTestRule jpa =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestEntity.class)
-          .buildUnitTestExtension();
+          .buildUnitTestRule();
 
   private static final ImmutableSortedMap<DateTime, TldState> values =
       ImmutableSortedMap.of(

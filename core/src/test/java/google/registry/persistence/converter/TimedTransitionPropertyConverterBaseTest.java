@@ -25,7 +25,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.util.Map;
 import javax.persistence.Converter;
 import javax.persistence.Entity;
@@ -39,11 +39,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TimedTransitionPropertyConverterBaseTest {
 
   @RegisterExtension
-  public final JpaUnitTestExtension jpa =
+  public final JpaUnitTestRule jpa =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestTimedTransitionPropertyConverter.class, TestEntity.class)
-          .buildUnitTestExtension();
+          .buildUnitTestRule();
 
   private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.000Z");
   private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.000Z");

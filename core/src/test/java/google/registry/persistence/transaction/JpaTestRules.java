@@ -60,10 +60,11 @@ public class JpaTestRules {
 
   /**
    * Junit rule for unit tests with JPA framework, when the underlying database is populated by the
-   * optional init script (which must not be the Nomulus Cloud SQL schema).
+   * optional init script (which must not be the Nomulus Cloud SQL schema). This rule can also be
+   * used as am extension for JUnit5 tests.
    */
-  public static class JpaUnitTestRule extends JpaTransactionManagerRule {
-
+  public static class JpaUnitTestRule extends JpaTransactionManagerRule
+      implements BeforeEachCallback, AfterEachCallback {
     private JpaUnitTestRule(
         Clock clock,
         Optional<String> initScriptPath,
@@ -71,24 +72,15 @@ public class JpaTestRules {
         ImmutableMap<String, String> userProperties) {
       super(clock, initScriptPath, extraEntityClasses, userProperties);
     }
-  }
 
-  /** JUnit extension that adapts {@link JpaUnitTestRule} for JUnit5. */
-  public static final class JpaUnitTestExtension implements BeforeEachCallback, AfterEachCallback {
-    private final JpaUnitTestRule unitTestRule;
-
-    private JpaUnitTestExtension(JpaUnitTestRule unitTestRule) {
-      this.unitTestRule = unitTestRule;
+    @Override
+    public void beforeEach(ExtensionContext context) throws Exception {
+      this.before();
     }
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-      unitTestRule.after();
-    }
-
-    @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
-      unitTestRule.before();
+      this.after();
     }
   }
 
@@ -214,7 +206,9 @@ public class JpaTestRules {
       return new JpaIntegrationWithCoverageExtension(buildIntegrationTestRule());
     }
 
-    /** Builds a {@link JpaUnitTestRule} instance. */
+    /**
+     * Builds a {@link JpaUnitTestRule} instance that can also be used as an extension for JUnit5.
+     */
     public JpaUnitTestRule buildUnitTestRule() {
       checkState(
           !Objects.equals(GOLDEN_SCHEMA_SQL_PATH, initScript),
@@ -224,14 +218,6 @@ public class JpaTestRules {
           Optional.ofNullable(initScript),
           ImmutableList.copyOf(extraEntityClasses),
           ImmutableMap.copyOf(userProperties));
-    }
-
-    /**
-     * Builds a {@link JpaUnitTestExtension} instance for JUnit 5 from a {@link JpaUnitTestRule}
-     * instance.
-     */
-    public JpaUnitTestExtension buildUnitTestExtension() {
-      return new JpaUnitTestExtension(buildUnitTestRule());
     }
   }
 }
