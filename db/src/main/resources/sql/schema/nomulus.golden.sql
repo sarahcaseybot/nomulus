@@ -1305,6 +1305,7 @@ ALTER TABLE ONLY public."DomainHost"
 
 
 --
+<<<<<<< HEAD
 -- Name: HostResource fk_host_resource_superordinate_domain; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1361,6 +1362,8 @@ ALTER TABLE ONLY public."PollMessage"
 
 
 --
+=======
+>>>>>>> d75b6d689... add todo for vkeys
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
