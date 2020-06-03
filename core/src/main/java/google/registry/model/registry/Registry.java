@@ -369,10 +369,14 @@ public class Registry extends ImmutableObject implements Buildable {
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // TODO(sarahbot): add VKeys for ReservedLists
 =======
   // TODO: add VKeys for ReservedLists
 >>>>>>> d75b6d689... add todo for vkeys
+=======
+  // TODO(sarahbot): add VKeys for ReservedLists
+>>>>>>> 5dbd98eca... Add username to TODOs
   /** The set of reserved lists that are applicable to this registry. */
   @ElementCollection @Transient Set<Key<ReservedList>> reservedLists;
 
@@ -382,10 +386,14 @@ public class Registry extends ImmutableObject implements Buildable {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // TODO(sarahbot): add VKey for PremiumList
 =======
   // TODO: add VKey for PremiumList
 >>>>>>> d75b6d689... add todo for vkeys
+=======
+  // TODO(sarahbot): add VKey for PremiumList
+>>>>>>> 5dbd98eca... Add username to TODOs
   /** The static {@link PremiumList} for this TLD, if there is one. */
   @Nullable @Transient Key<PremiumList> premiumList;
 
