@@ -630,6 +630,47 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 
 --
+-- Name: Tld; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Tld" (
+    tld_name text NOT NULL,
+    add_grace_period_length bigint NOT NULL,
+    allowed_fully_qualified_host_names text[],
+    allowed_registrant_contact_ids text[],
+    anchor_tenant_add_grace_period_length bigint NOT NULL,
+    auto_renew_grace_period_length bigint NOT NULL,
+    automatic_transfer_length bigint NOT NULL,
+    claims_period_end timestamp with time zone NOT NULL,
+    create_billing_cost_amount numeric(19,2),
+    create_billing_cost_currency text,
+    creation_time timestamp with time zone NOT NULL,
+    currency_unit text NOT NULL,
+    dns_paused boolean NOT NULL,
+    dns_writers text[] NOT NULL,
+    drive_folder_id text,
+    eap_fee_schedule public.hstore NOT NULL,
+    escrow_enabled boolean NOT NULL,
+    lordn_username text,
+    num_dns_publish_locks integer NOT NULL,
+    pending_delete_length bigint NOT NULL,
+    pricing_engine_class_name text,
+    redemption_grace_period_length bigint NOT NULL,
+    renew_billing_cost_transitions public.hstore NOT NULL,
+    renew_grace_period_length bigint NOT NULL,
+    restore_billing_cost_amount numeric(19,2),
+    restore_billing_cost_currency text,
+    roid_suffix text,
+    server_status_change_billing_cost_amount numeric(19,2),
+    server_status_change_billing_cost_currency text,
+    tld_state_transitions public.hstore NOT NULL,
+    tld_type text NOT NULL,
+    tld_unicode text NOT NULL,
+    transfer_grace_period_length bigint NOT NULL
+);
+
+
+--
 -- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -827,6 +868,14 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 ALTER TABLE ONLY public."ReservedList"
     ADD CONSTRAINT "ReservedList_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: Tld Tld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Tld"
+    ADD CONSTRAINT "Tld_pkey" PRIMARY KEY (tld_name);
 
 
 --
