@@ -71,6 +71,12 @@ public class RegistryTest extends EntityTestCase {
     jpaTm().transact(() -> jpaTm().saveNew(registry));
     Registry persisted =
         jpaTm().transact(() -> jpaTm().load(VKey.createSql(Registry.class, registry.tldStrId)));
+    persisted =
+        persisted
+            .asBuilder()
+            .setTldStr(registry.getTldStr())
+            .setPremiumListKey(registry.getPremiumList())
+            .build();
     assertThat(persisted).isEqualTo(registry);
   }
 
