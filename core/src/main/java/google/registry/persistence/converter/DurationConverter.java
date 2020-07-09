@@ -22,11 +22,7 @@ import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.postgresql.util.PGInterval;
 
-/**
- * JPA converter to for storing/retrieving {@link org.joda.time.Duration} objects.
- *
- * <p>Note: this only converts the values for days, hours, minutes, and seconds
- */
+/** JPA converter to for storing/retrieving {@link org.joda.time.Duration} objects. * */
 @Converter(autoApply = true)
 public class DurationConverter implements AttributeConverter<Duration, PGInterval> {
 
@@ -38,6 +34,8 @@ public class DurationConverter implements AttributeConverter<Duration, PGInterva
     }
     PGInterval interval = new PGInterval();
     Period period = new Period(duration);
+    interval.setYears(period.getYears());
+    interval.setMonths(period.getMonths());
     interval.setDays(period.getDays());
     interval.setHours(period.getHours());
     interval.setMinutes(period.getMinutes());
@@ -63,11 +61,13 @@ public class DurationConverter implements AttributeConverter<Duration, PGInterva
       return null;
     }
 
+    final int years = interval.getYears();
+    final int months = interval.getMonths();
     final int days = interval.getDays();
     final int hours = interval.getHours();
     final int mins = interval.getMinutes();
     final double secs = interval.getSeconds();
-    return new Period(0, 0, 0, days, hours, mins, (int) secs, (int) ((secs % 1) * 1000))
+    return new Period(years, months, 0, days, hours, mins, (int) secs, (int) ((secs % 1) * 1000))
         .toStandardDuration();
   }
 }
