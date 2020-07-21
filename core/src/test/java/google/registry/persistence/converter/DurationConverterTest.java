@@ -33,7 +33,7 @@ public class DurationConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestRules.Builder().withEntityClass(DurationTestEntity.class).buildUnitTestRule();
 
   private final DurationConverter converter = new DurationConverter();
 
@@ -45,25 +45,30 @@ public class DurationConverterTest {
 
   @Test
   void testRoundTrip() {
-    TestEntity entity = new TestEntity(Duration.standardDays(6).plus(Duration.millis(7)));
+    Duration testDuration =
+        Duration.standardDays(6)
+            .plus(Duration.standardHours(10))
+            .plus(Duration.standardMinutes(30))
+            .plus(Duration.standardSeconds(15))
+            .plus(Duration.millis(7));
+    DurationTestEntity entity = new DurationTestEntity(testDuration);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
-    TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.duration.getMillis())
-        .isEqualTo(Duration.standardDays(6).plus(Duration.millis(7)).getMillis());
+    DurationTestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
+    assertThat(persisted.duration.getMillis()).isEqualTo(testDuration.getMillis());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
   @EntityForTesting
-  public static class TestEntity extends ImmutableObject {
+  public static class DurationTestEntity extends ImmutableObject {
 
     @Id String name = "id";
 
     Duration duration;
 
-    public TestEntity() {}
+    public DurationTestEntity() {}
 
-    TestEntity(Duration duration) {
+    DurationTestEntity(Duration duration) {
       this.duration = duration;
     }
   }

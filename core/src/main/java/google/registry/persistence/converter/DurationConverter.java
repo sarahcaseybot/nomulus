@@ -34,10 +34,11 @@ public class DurationConverter implements AttributeConverter<Duration, PGInterva
     }
     PGInterval interval = new PGInterval();
     Period period = new Period(duration);
-    interval.setYears(period.getYears());
-    interval.setMonths(period.getMonths());
-    interval.setDays(period.getDays());
-    interval.setHours(period.getHours());
+    // For some reason when the period is created from the duration, it does not set days, but
+    // instead just a total number of hours. Years and months are not created because those can
+    // differ in length of milliseconds.
+    interval.setDays(period.getHours() / 24);
+    interval.setHours(period.getHours() % 24);
     interval.setMinutes(period.getMinutes());
     double millis = (double) period.getMillis() / 1000;
     interval.setSeconds(period.getSeconds() + millis);
@@ -61,13 +62,11 @@ public class DurationConverter implements AttributeConverter<Duration, PGInterva
       return null;
     }
 
-    final int years = interval.getYears();
-    final int months = interval.getMonths();
     final int days = interval.getDays();
     final int hours = interval.getHours();
     final int mins = interval.getMinutes();
-    final double secs = interval.getSeconds();
-    return new Period(years, months, 0, days, hours, mins, (int) secs, (int) ((secs % 1) * 1000))
-        .toStandardDuration();
+    final int secs = (int) interval.getSeconds();
+    final int millis = interval.getMicroSeconds() / 1000;
+    return new Period(0, 0, 0, days, hours, mins, secs, millis).toStandardDuration();
   }
 }
