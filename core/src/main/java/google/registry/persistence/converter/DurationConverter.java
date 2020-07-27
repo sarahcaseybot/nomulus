@@ -22,7 +22,15 @@ import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.postgresql.util.PGInterval;
 
-/** JPA converter to for storing/retrieving {@link org.joda.time.Duration} objects. * */
+/**
+ * JPA converter to for storing/retrieving {@link org.joda.time.Duration} objects.
+ *
+ * <p>The Joda Time Duration is simply a number of milliseconds representing a length of time. This
+ * can be converted into a PGInterval, but only for the fields that have a standard number of
+ * milliseconds. Therefore, there is no way to populate the months or years field of a PGInterval
+ * and be confident that it is representing the exact number of milliseconds it was intended to
+ * represent.
+ */
 @Converter(autoApply = true)
 public class DurationConverter implements AttributeConverter<Duration, PGInterval> {
 
