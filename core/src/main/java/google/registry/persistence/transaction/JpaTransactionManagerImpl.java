@@ -27,12 +27,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
+import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
-import java.sql.SQLException;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -41,13 +41,11 @@ import java.util.stream.StreamSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
-import javax.persistence.OptimisticLockException;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.SingularAttribute;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.hibernate.exception.JDBCConnectionException;
 import org.joda.time.DateTime;
 
@@ -122,12 +120,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       } catch (Throwable rollbackException) {
         logger.atSevere().withCause(rollbackException).log("Rollback failed; suppressing error");
       }
-      if (ExceptionUtils.indexOfThrowable(e, OptimisticLockException.class) != -1) {
-        throw new OptimisticLockException(e);
-      }
-      if (ExceptionUtils.indexOfThrowable(e, JDBCConnectionException.class) != -1) {
-        throw new JDBCConnectionException(e.getMessage(), new SQLException(e));
-      }
       throw e;
     } finally {
       txnInfo.clear();
@@ -143,7 +135,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                   work.run();
                   return null;
                 }),
-        OptimisticLockException.class);
+        JpaRetries::isFailedTxnRetriable);
   }
 
   public void transactNoRetry(Runnable work) {
