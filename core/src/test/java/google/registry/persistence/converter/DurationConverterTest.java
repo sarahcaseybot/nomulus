@@ -58,6 +58,17 @@ public class DurationConverterTest {
     assertThat(persisted.duration.getMillis()).isEqualTo(testDuration.getMillis());
   }
 
+  @Test
+  void testRoundTripLargeNumberOfDays() {
+    Duration testDuration =
+        Duration.standardDays(10001).plus(Duration.standardHours(100)).plus(Duration.millis(790));
+    DurationTestEntity entity = new DurationTestEntity(testDuration);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    DurationTestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
+    assertThat(persisted.duration.getMillis()).isEqualTo(testDuration.getMillis());
+  }
+
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
   @EntityForTesting
   public static class DurationTestEntity extends ImmutableObject {
