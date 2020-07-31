@@ -98,6 +98,40 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T transact(Supplier<T> work) {
     // TODO(shicong): Investigate removing transactNew functionality after migration as it may
     //  be same as this one.
+    return retrier.callWithRetry(
+        () -> {
+          if (inTransaction()) {
+            return work.get();
+          }
+          TransactionInfo txnInfo = transactionInfo.get();
+          txnInfo.entityManager = emf.createEntityManager();
+          EntityTransaction txn = txnInfo.entityManager.getTransaction();
+          try {
+            txn.begin();
+            txnInfo.start(clock);
+            T result = work.get();
+            txnInfo.recordTransaction();
+            txn.commit();
+            return result;
+          } catch (RuntimeException | Error e) {
+            // Error is unchecked!
+            try {
+              txn.rollback();
+              logger.atWarning().log("Error during transaction; transaction rolled back");
+            } catch (Throwable rollbackException) {
+              logger.atSevere().withCause(rollbackException).log(
+                  "Rollback failed; suppressing error");
+            }
+            throw e;
+          } finally {
+            txnInfo.clear();
+          }
+        },
+        JpaRetries::isFailedTxnRetriable);
+  }
+
+  @Override
+  public <T> T transactNoRetry(Supplier<T> work) {
     if (inTransaction()) {
       return work.get();
     }
@@ -127,18 +161,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public void transact(Runnable work) {
-    retrier.callWithRetry(
-        () ->
-            transact(
-                () -> {
-                  work.run();
-                  return null;
-                }),
-        JpaRetries::isFailedTxnRetriable);
+    transact(
+        () -> {
+          work.run();
+          return null;
+        });
   }
 
+  @Override
   public void transactNoRetry(Runnable work) {
-    transact(
+    transactNoRetry(
         () -> {
           work.run();
           return null;

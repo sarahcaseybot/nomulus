@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
@@ -138,6 +139,7 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey))).isEqualTo(theEntity);
   }
 
+  @Test
   public void transact_retriesOptimisticLockExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
@@ -146,6 +148,33 @@ class JpaTransactionManagerImplTest {
         OptimisticLockException.class,
         () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
     verify(spyJpaTm, times(3)).delete(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.delete(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(OptimisticLockException.class, () -> spyJpaTm.transact(supplier));
+    verify(spyJpaTm, times(6)).delete(theEntityKey);
+  }
+
+  @Test
+  public void transactNoRetry_doesNotRetryOptimisticLockException() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
+    spyJpaTm.transactNoRetry(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        OptimisticLockException.class,
+        () -> spyJpaTm.transactNoRetry(() -> spyJpaTm.delete(theEntityKey)));
+    verify(spyJpaTm, times(1)).delete(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.delete(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(OptimisticLockException.class, () -> spyJpaTm.transactNoRetry(supplier));
+    verify(spyJpaTm, times(2)).delete(theEntityKey);
   }
 
   @Test
@@ -158,6 +187,14 @@ class JpaTransactionManagerImplTest {
     assertThrows(
         RuntimeException.class, () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
     verify(spyJpaTm, times(3)).delete(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.delete(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(RuntimeException.class, () -> spyJpaTm.transact(supplier));
+    verify(spyJpaTm, times(6)).delete(theEntityKey);
   }
 
   @Test
@@ -169,6 +206,14 @@ class JpaTransactionManagerImplTest {
         JDBCConnectionException.class,
         () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
     verify(spyJpaTm, times(3)).load(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.load(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(JDBCConnectionException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
+    verify(spyJpaTm, times(6)).load(theEntityKey);
   }
 
   @Test
@@ -184,6 +229,14 @@ class JpaTransactionManagerImplTest {
         RuntimeException.class,
         () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
     verify(spyJpaTm, times(3)).load(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.load(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(RuntimeException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
+    verify(spyJpaTm, times(6)).load(theEntityKey);
   }
 
   @Test
