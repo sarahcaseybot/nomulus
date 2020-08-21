@@ -39,7 +39,7 @@ public class PremiumListDao {
     if (registry.getPremiumList() == null) {
       return Optional.empty();
     }
-    String premiumListName = registry.getPremiumList().getName();
+    String premiumListName = registry.getPremiumList().getOfyKey().getName();
     PremiumList premiumList =
         getLatestRevisionCached(premiumListName)
             .orElseThrow(

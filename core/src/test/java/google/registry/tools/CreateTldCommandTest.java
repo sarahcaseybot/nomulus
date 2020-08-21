@@ -32,8 +32,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
-import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.ReservedList;
+import google.registry.persistence.VKey;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -265,7 +266,9 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getReservedLists().stream().map(Key::getName))
+    assertThat(
+            Registry.get("xn--q9jyb4c").getReservedLists().stream()
+                .map((VKey<ReservedList> t) -> t.getOfyKey().getName()))
         .containsExactly("xn--q9jyb4c_abuse", "common_abuse");
   }
 
@@ -505,7 +508,8 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=FooDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumList().getName()).isEqualTo("xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getPremiumList().getOfyKey().getName())
+        .isEqualTo("xn--q9jyb4c");
   }
 
   @Test

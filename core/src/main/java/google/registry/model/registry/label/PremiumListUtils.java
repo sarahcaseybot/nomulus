@@ -79,7 +79,7 @@ public final class PremiumListUtils {
       return Optional.empty();
     }
     DateTime startTime = DateTime.now(UTC);
-    String listName = registry.getPremiumList().getName();
+    String listName = registry.getPremiumList().getOfyKey().getName();
     Optional<PremiumList> optionalPremiumList = PremiumList.getCached(listName);
     checkState(optionalPremiumList.isPresent(), "Could not load premium list '%s'", listName);
     PremiumList premiumList = optionalPremiumList.get();

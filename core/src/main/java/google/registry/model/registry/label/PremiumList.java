@@ -46,6 +46,7 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
@@ -387,7 +388,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
 
   @Override
   public boolean refersToKey(Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key) {
-    return Objects.equals(registry.getPremiumList(), key);
+    return Objects.equals(registry.getPremiumList().getOfyKey(), key);
   }
 
   @Override
@@ -433,6 +434,17 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
       }
       return super.build();
     }
+  }
+
+  public VKey<PremiumList> createVKey() {
+    return VKey.create(
+        PremiumList.class,
+        this.getName(),
+        Key.create(this.parent, PremiumList.class, this.getName()));
+  }
+
+  public static VKey<PremiumList> createVKey(Key<PremiumList> key) {
+    return VKey.create(PremiumList.class, key.getName(), key);
   }
 
   @PrePersist

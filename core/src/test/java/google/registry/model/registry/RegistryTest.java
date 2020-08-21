@@ -43,6 +43,7 @@ import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.persistence.VKey;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -159,7 +160,7 @@ class RegistryTest extends EntityTestCase {
         persistReservedList("tld-reserved6", "hammock,FULLY_BLOCKED", "mouse,FULLY_BLOCKED");
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
-    assertThat(r.getReservedLists().stream().map(Key::getName))
+    assertThat(r.getReservedLists().stream().map((VKey<ReservedList> t) -> t.getOfyKey().getName()))
         .containsExactly("tld-reserved5", "tld-reserved6");
     r = Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of()).build();
     assertThat(r.getReservedLists()).isEmpty();
@@ -174,7 +175,7 @@ class RegistryTest extends EntityTestCase {
             .asBuilder()
             .setReservedListsByName(ImmutableSet.of("tld-reserved24", "tld-reserved25"))
             .build();
-    assertThat(r.getReservedLists().stream().map(Key::getName))
+    assertThat(r.getReservedLists().stream().map((VKey<ReservedList> t) -> t.getOfyKey().getName()))
         .containsExactly("tld-reserved24", "tld-reserved25");
     r = Registry.get("tld").asBuilder().setReservedListsByName(ImmutableSet.of()).build();
     assertThat(r.getReservedLists()).isEmpty();
@@ -184,7 +185,7 @@ class RegistryTest extends EntityTestCase {
   void testSetPremiumList() {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
-    Key<PremiumList> plKey = registry.getPremiumList();
+    Key<PremiumList> plKey = registry.getPremiumList().getOfyKey();
     assertThat(plKey).isNotNull();
     PremiumList stored = PremiumList.getUncached(plKey.getName()).get();
     assertThat(stored.getName()).isEqualTo("tld2");

@@ -62,6 +62,7 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.persistence.VKey;
 import google.registry.util.Idn;
 import java.util.Map;
 import java.util.Optional;
@@ -359,15 +360,15 @@ public class Registry extends ImmutableObject implements Buildable {
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved lists that are applicable to this registry. */
-  Set<Key<ReservedList>> reservedLists;
+  Set<VKey<ReservedList>> reservedLists;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
-  public ImmutableSet<Key<ReservedList>> getReservedLists() {
+  public ImmutableSet<VKey<ReservedList>> getReservedLists() {
     return nullToEmptyImmutableCopy(reservedLists);
   }
 
   /** The static {@link PremiumList} for this TLD, if there is one. */
-  Key<PremiumList> premiumList;
+  VKey<PremiumList> premiumList;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
   boolean escrowEnabled = DEFAULT_ESCROW_ENABLED;
@@ -527,7 +528,7 @@ public class Registry extends ImmutableObject implements Buildable {
   }
 
   @Nullable
-  public Key<PremiumList> getPremiumList() {
+  public VKey<PremiumList> getPremiumList() {
     return premiumList;
   }
 
@@ -794,21 +795,23 @@ public class Registry extends ImmutableObject implements Buildable {
 
     public Builder setReservedLists(Set<ReservedList> reservedLists) {
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
-      ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
+      ImmutableSet.Builder<VKey<ReservedList>> builder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
-        builder.add(Key.create(reservedList));
+        builder.add(
+            VKey.create(ReservedList.class, reservedList.getName(), Key.create(reservedList)));
       }
       getInstance().reservedLists = builder.build();
       return this;
     }
 
     public Builder setPremiumList(PremiumList premiumList) {
-      getInstance().premiumList = (premiumList == null) ? null : Key.create(premiumList);
+      getInstance().premiumList =
+          (premiumList == null) ? null : VKey.createOfy(PremiumList.class, Key.create(premiumList));
       return this;
     }
 
     @VisibleForTesting
-    public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
+    public Builder setPremiumListKey(@Nullable VKey<PremiumList> premiumList) {
       getInstance().premiumList = premiumList;
       return this;
     }

@@ -137,7 +137,8 @@ public class ExportPremiumTermsAction implements Runnable {
   }
 
   private String getFormattedPremiumTerms(Registry registry) {
-    Optional<PremiumList> premiumList = PremiumList.getCached(registry.getPremiumList().getName());
+    Optional<PremiumList> premiumList =
+        PremiumList.getCached(registry.getPremiumList().getOfyKey().getName());
     checkState(premiumList.isPresent(), "Could not load premium list for " + tld);
     SortedSet<String> premiumTerms =
         Streams.stream(loadPremiumListEntries(premiumList.get()))

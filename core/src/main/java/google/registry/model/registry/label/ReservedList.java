@@ -38,6 +38,7 @@ import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.List;
 import java.util.Map;
@@ -140,7 +141,7 @@ public final class ReservedList
 
   @Override
   protected boolean refersToKey(Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key) {
-    return registry.getReservedLists().contains(key);
+    return registry.getReservedLists().contains(VKey.from(key));
   }
 
   /** Determines whether the ReservedList is in use on any Registry */
@@ -222,17 +223,17 @@ public final class ReservedList
   }
 
   private static ImmutableSet<ReservedList> loadReservedLists(
-      ImmutableSet<Key<ReservedList>> reservedListKeys) {
-    return reservedListKeys
-        .stream()
+      ImmutableSet<VKey<ReservedList>> reservedListKeys) {
+    return reservedListKeys.stream()
         .map(
             (listKey) -> {
               try {
-                return cache.get(listKey.getName());
+                return cache.get(listKey.getOfyKey().getName());
               } catch (ExecutionException e) {
                 throw new UncheckedExecutionException(
                     String.format(
-                        "Could not load the reserved list '%s' from the cache", listKey.getName()),
+                        "Could not load the reserved list '%s' from the cache",
+                        listKey.getOfyKey().getName()),
                     e);
               }
             })
@@ -313,5 +314,16 @@ public final class ReservedList
     public Builder setReservedListMapFromLines(Iterable<String> lines) {
       return setReservedListMap(getInstance().parse(lines));
     }
+  }
+
+  public VKey<ReservedList> createVKey() {
+    return VKey.create(
+        ReservedList.class,
+        this.getName(),
+        Key.create(this.parent, ReservedList.class, this.getName()));
+  }
+
+  public static VKey<ReservedList> createVKey(Key<ReservedList> key) {
+    return VKey.create(ReservedList.class, key.getName(), key);
   }
 }

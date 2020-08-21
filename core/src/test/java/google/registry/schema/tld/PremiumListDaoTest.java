@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import java.math.BigDecimal;
@@ -202,10 +203,11 @@ public class PremiumListDaoTest {
         newRegistry("foobar", "FOOBAR")
             .asBuilder()
             .setPremiumListKey(
-                Key.create(
-                    getCrossTldKey(),
-                    google.registry.model.registry.label.PremiumList.class,
-                    "premlist"))
+                VKey.from(
+                    Key.create(
+                        getCrossTldKey(),
+                        google.registry.model.registry.label.PremiumList.class,
+                        "premlist")))
             .build());
     PremiumListDao.saveNew(
         new PremiumList.Builder()
@@ -237,10 +239,11 @@ public class PremiumListDaoTest {
         newRegistry("foobar", "FOOBAR")
             .asBuilder()
             .setPremiumListKey(
-                Key.create(
-                    getCrossTldKey(),
-                    google.registry.model.registry.label.PremiumList.class,
-                    "premlist"))
+                VKey.from(
+                    Key.create(
+                        getCrossTldKey(),
+                        google.registry.model.registry.label.PremiumList.class,
+                        "premlist")))
             .build());
     PremiumListDao.saveNew(
         new PremiumList.Builder()
