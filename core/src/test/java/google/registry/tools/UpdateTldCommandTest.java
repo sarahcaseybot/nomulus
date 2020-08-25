@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
@@ -858,9 +857,9 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_premiumListNotRemovedWhenNotSpecified() throws Exception {
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
-    Key<PremiumList> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList().getOfyKey();
+    VKey<PremiumList> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList();
     assertThat(premiumListKey).isNotNull();
-    assertThat(premiumListKey.getName()).isEqualTo("xn--q9jyb4c");
+    assertThat(premiumListKey.getOfyKey().getName()).isEqualTo("xn--q9jyb4c");
   }
 
   @Test

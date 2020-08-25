@@ -797,16 +797,14 @@ public class Registry extends ImmutableObject implements Buildable {
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
       ImmutableSet.Builder<VKey<ReservedList>> builder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
-        builder.add(
-            VKey.create(ReservedList.class, reservedList.getName(), Key.create(reservedList)));
+        builder.add(reservedList.createVKey());
       }
       getInstance().reservedLists = builder.build();
       return this;
     }
 
     public Builder setPremiumList(PremiumList premiumList) {
-      getInstance().premiumList =
-          (premiumList == null) ? null : VKey.createOfy(PremiumList.class, Key.create(premiumList));
+      getInstance().premiumList = (premiumList == null) ? null : premiumList.createVKey();
       return this;
     }
 

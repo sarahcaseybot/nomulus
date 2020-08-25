@@ -185,9 +185,9 @@ class RegistryTest extends EntityTestCase {
   void testSetPremiumList() {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
-    Key<PremiumList> plKey = registry.getPremiumList().getOfyKey();
+    VKey<PremiumList> plKey = registry.getPremiumList();
     assertThat(plKey).isNotNull();
-    PremiumList stored = PremiumList.getUncached(plKey.getName()).get();
+    PremiumList stored = PremiumList.getUncached(plKey.getOfyKey().getName()).get();
     assertThat(stored.getName()).isEqualTo("tld2");
   }
 
