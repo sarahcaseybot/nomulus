@@ -532,6 +532,13 @@ public class Registry extends ImmutableObject implements Buildable {
     return premiumList;
   }
 
+  public Optional<String> getPremiumListName() {
+    if (premiumList == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(premiumList.getOfyKey().getName());
+  }
+
   public CurrencyUnit getCurrency() {
     return currency;
   }

@@ -36,9 +36,6 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.ReservedList;
-import google.registry.persistence.VKey;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -254,7 +251,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
 
     assertThat(
             Registry.get("xn--q9jyb4c").getReservedLists().stream()
-                .map((VKey<ReservedList> t) -> t.getOfyKey().getName()))
+                .map(t -> t.getOfyKey().getName()))
         .containsExactly("xn--q9jyb4c_r1", "xn--q9jyb4c_r2");
   }
 
@@ -266,7 +263,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
     runCommandForced("--reserved_lists=xn--q9jyb4c_r2", "xn--q9jyb4c");
     assertThat(
             Registry.get("xn--q9jyb4c").getReservedLists().stream()
-                .map((VKey<ReservedList> t) -> t.getOfyKey().getName()))
+                .map(t -> t.getOfyKey().getName()))
         .containsExactly("xn--q9jyb4c_r2");
   }
 
@@ -278,7 +275,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r2", "xn--q9jyb4c");
     assertThat(
             Registry.get("xn--q9jyb4c").getReservedLists().stream()
-                .map((VKey<ReservedList> t) -> t.getOfyKey().getName()))
+                .map(t -> t.getOfyKey().getName()))
         .containsExactly("xn--q9jyb4c_r1", "xn--q9jyb4c_r2");
   }
 
@@ -299,7 +296,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
     runCommandForced("--remove_reserved_lists=xn--q9jyb4c_r1", "xn--q9jyb4c");
     assertThat(
             Registry.get("xn--q9jyb4c").getReservedLists().stream()
-                .map((VKey<ReservedList> t) -> t.getOfyKey().getName()))
+                .map(t -> t.getOfyKey().getName()))
         .containsExactly("xn--q9jyb4c_r2");
   }
 
@@ -857,9 +854,9 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_premiumListNotRemovedWhenNotSpecified() throws Exception {
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
-    VKey<PremiumList> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList();
-    assertThat(premiumListKey).isNotNull();
-    assertThat(premiumListKey.getOfyKey().getName()).isEqualTo("xn--q9jyb4c");
+    String premiumListName = Registry.get("xn--q9jyb4c").getPremiumListName().get();
+    assertThat(premiumListName).isNotNull();
+    assertThat(premiumListName).isEqualTo("xn--q9jyb4c");
   }
 
   @Test
@@ -927,8 +924,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_setPremiumList() throws Exception {
     runCommandForced("--premium_list=xn--q9jyb4c", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumList().getOfyKey().getName())
-        .isEqualTo("xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getPremiumListName().get()).isEqualTo("xn--q9jyb4c");
   }
 
   @Test

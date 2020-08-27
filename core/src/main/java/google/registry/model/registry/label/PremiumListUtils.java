@@ -75,11 +75,11 @@ public final class PremiumListUtils {
    */
   public static Optional<Money> getPremiumPrice(String label, Registry registry) {
     // If the registry has no configured premium list, then no labels are premium.
-    if (registry.getPremiumList() == null) {
+    if (registry.getPremiumListName().isEmpty()) {
       return Optional.empty();
     }
     DateTime startTime = DateTime.now(UTC);
-    String listName = registry.getPremiumList().getOfyKey().getName();
+    String listName = registry.getPremiumListName().get();
     Optional<PremiumList> optionalPremiumList = PremiumList.getCached(listName);
     checkState(optionalPremiumList.isPresent(), "Could not load premium list '%s'", listName);
     PremiumList premiumList = optionalPremiumList.get();

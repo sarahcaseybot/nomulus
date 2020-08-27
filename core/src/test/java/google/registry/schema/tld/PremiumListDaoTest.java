@@ -203,11 +203,7 @@ public class PremiumListDaoTest {
         newRegistry("foobar", "FOOBAR")
             .asBuilder()
             .setPremiumListKey(
-                VKey.from(
-                    Key.create(
-                        getCrossTldKey(),
-                        google.registry.model.registry.label.PremiumList.class,
-                        "premlist")))
+                VKey.from(Key.create(getCrossTldKey(), PremiumList.class, "premlist")))
             .build());
     PremiumListDao.saveNew(
         new PremiumList.Builder()
@@ -239,11 +235,7 @@ public class PremiumListDaoTest {
         newRegistry("foobar", "FOOBAR")
             .asBuilder()
             .setPremiumListKey(
-                VKey.from(
-                    Key.create(
-                        getCrossTldKey(),
-                        google.registry.model.registry.label.PremiumList.class,
-                        "premlist")))
+                VKey.from(Key.create(getCrossTldKey(), PremiumList.class, "premlist")))
             .build());
     PremiumListDao.saveNew(
         new PremiumList.Builder()

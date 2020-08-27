@@ -175,8 +175,8 @@ public final class ReservedList
   }
 
   /** Loads a ReservedList from its Objectify key. */
-  public static Optional<ReservedList> load(Key<ReservedList> key) {
-    return get(key.getName());
+  public static Optional<ReservedList> load(VKey<ReservedList> key) {
+    return get(key.getOfyKey().getName());
   }
 
   /**

@@ -36,10 +36,10 @@ public class PremiumListDao {
    */
   public static Optional<Money> getPremiumPrice(String label, Registry registry) {
     // If the registry has no configured premium list, then no labels are premium.
-    if (registry.getPremiumList() == null) {
+    if (registry.getPremiumListName().isEmpty()) {
       return Optional.empty();
     }
-    String premiumListName = registry.getPremiumList().getOfyKey().getName();
+    String premiumListName = registry.getPremiumListName().get();
     PremiumList premiumList =
         getLatestRevisionCached(premiumListName)
             .orElseThrow(
