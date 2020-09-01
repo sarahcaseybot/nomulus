@@ -159,7 +159,7 @@ class RegistryTest extends EntityTestCase {
         persistReservedList("tld-reserved6", "hammock,FULLY_BLOCKED", "mouse,FULLY_BLOCKED");
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
-    assertThat(r.getReservedLists().stream().map(t -> t.getOfyKey().getName()))
+    assertThat(r.getReservedLists().stream().map(Key::getName))
         .containsExactly("tld-reserved5", "tld-reserved6");
     r = Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of()).build();
     assertThat(r.getReservedLists()).isEmpty();
@@ -174,7 +174,7 @@ class RegistryTest extends EntityTestCase {
             .asBuilder()
             .setReservedListsByName(ImmutableSet.of("tld-reserved24", "tld-reserved25"))
             .build();
-    assertThat(r.getReservedLists().stream().map(t -> t.getOfyKey().getName()))
+    assertThat(r.getReservedLists().stream().map(Key::getName))
         .containsExactly("tld-reserved24", "tld-reserved25");
     r = Registry.get("tld").asBuilder().setReservedListsByName(ImmutableSet.of()).build();
     assertThat(r.getReservedLists()).isEmpty();
@@ -185,7 +185,6 @@ class RegistryTest extends EntityTestCase {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
     String plName = registry.getPremiumListName().get();
-    assertThat(plName).isNotNull();
     PremiumList stored = PremiumList.getUncached(plName).get();
     assertThat(stored.getName()).isEqualTo("tld2");
   }

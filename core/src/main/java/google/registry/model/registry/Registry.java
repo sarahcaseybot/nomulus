@@ -360,10 +360,10 @@ public class Registry extends ImmutableObject implements Buildable {
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved lists that are applicable to this registry. */
-  Set<VKey<ReservedList>> reservedLists;
+  Set<Key<ReservedList>> reservedLists;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
-  public ImmutableSet<VKey<ReservedList>> getReservedLists() {
+  public ImmutableSet<Key<ReservedList>> getReservedLists() {
     return nullToEmptyImmutableCopy(reservedLists);
   }
 
@@ -802,9 +802,9 @@ public class Registry extends ImmutableObject implements Buildable {
 
     public Builder setReservedLists(Set<ReservedList> reservedLists) {
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
-      ImmutableSet.Builder<VKey<ReservedList>> builder = new ImmutableSet.Builder<>();
+      ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
-        builder.add(reservedList.createVKey());
+        builder.add(Key.create(reservedList));
       }
       getInstance().reservedLists = builder.build();
       return this;

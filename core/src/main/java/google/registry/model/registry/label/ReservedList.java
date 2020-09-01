@@ -38,7 +38,6 @@ import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
-import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.List;
 import java.util.Map;
@@ -141,7 +140,7 @@ public final class ReservedList
 
   @Override
   protected boolean refersToKey(Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key) {
-    return registry.getReservedLists().contains(VKey.from(key));
+    return registry.getReservedLists().contains(key);
   }
 
   /** Determines whether the ReservedList is in use on any Registry */
@@ -175,8 +174,8 @@ public final class ReservedList
   }
 
   /** Loads a ReservedList from its Objectify key. */
-  public static Optional<ReservedList> load(VKey<ReservedList> key) {
-    return get(key.getOfyKey().getName());
+  public static Optional<ReservedList> load(Key<ReservedList> key) {
+    return get(key.getName());
   }
 
   /**
@@ -223,17 +222,16 @@ public final class ReservedList
   }
 
   private static ImmutableSet<ReservedList> loadReservedLists(
-      ImmutableSet<VKey<ReservedList>> reservedListKeys) {
+      ImmutableSet<Key<ReservedList>> reservedListKeys) {
     return reservedListKeys.stream()
         .map(
             (listKey) -> {
               try {
-                return cache.get(listKey.getOfyKey().getName());
+                return cache.get(listKey.getName());
               } catch (ExecutionException e) {
                 throw new UncheckedExecutionException(
                     String.format(
-                        "Could not load the reserved list '%s' from the cache",
-                        listKey.getOfyKey().getName()),
+                        "Could not load the reserved list '%s' from the cache", listKey.getName()),
                     e);
               }
             })
@@ -314,16 +312,5 @@ public final class ReservedList
     public Builder setReservedListMapFromLines(Iterable<String> lines) {
       return setReservedListMap(getInstance().parse(lines));
     }
-  }
-
-  public VKey<ReservedList> createVKey() {
-    return VKey.create(
-        ReservedList.class,
-        this.getName(),
-        Key.create(this.parent, ReservedList.class, this.getName()));
-  }
-
-  public static VKey<ReservedList> createVKey(Key<ReservedList> key) {
-    return VKey.create(ReservedList.class, key.getName(), key);
   }
 }
