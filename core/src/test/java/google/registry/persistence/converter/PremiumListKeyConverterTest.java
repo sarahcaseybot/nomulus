@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumListKeyConverter}. */
-public class PremiumListKeyConverterTest {
+class PremiumListKeyConverterTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =

@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ReservedListKeyConverter}. */
-public class ReservedListKeyConverterTest {
+class ReservedListKeyConverterTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
