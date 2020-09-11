@@ -25,15 +25,16 @@
         create_billing_cost_currency text,
         creation_time timestamptz not null,
         currency text not null,
-        disable_invoicing boolean not null,
         dns_paused boolean not null,
         dns_writers text[] not null,
         drive_folder_id text,
         eap_fee_schedule hstore not null,
         escrow_enabled boolean not null,
+        invoicing_enabled boolean not null,
         lordn_username text,
         num_dns_publish_locks int4 not null,
         pending_delete_length interval not null,
+        premium_list text,
         pricing_engine_class_name text,
         redemption_grace_period_length interval not null,
         renew_billing_cost_transitions hstore not null,
@@ -48,4 +49,9 @@
         tld_unicode text not null,
         transfer_grace_period_length interval not null,
         primary key (tld_name)
+    );
+
+     create table "Tld_reservedLists" (
+       tld_tld_name text not null,
+        reserved_lists text
     );

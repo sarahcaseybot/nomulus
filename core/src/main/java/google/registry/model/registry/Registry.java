@@ -361,12 +361,8 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>Note that this boolean is the sole determiner on whether invoices should be generated for a
    * TLD. This applies to {@link TldType#TEST} TLDs as well.
    */
-<<<<<<< HEAD
-  boolean invoicingEnabled = false;
-=======
   @Column(nullable = false)
-  boolean disableInvoicing = false;
->>>>>>> acf02e5ec (Add jpa annotations to Registry.java)
+  boolean invoicingEnabled = false;
 
   /**
    * A property that transitions to different TldStates at different times. Stored as a list of
@@ -382,7 +378,7 @@ public class Registry extends ImmutableObject implements Buildable {
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved lists that are applicable to this registry. */
-  @ElementCollection @Transient Set<Key<ReservedList>> reservedLists;
+  @ElementCollection Set<Key<ReservedList>> reservedLists;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
   public ImmutableSet<Key<ReservedList>> getReservedLists() {
@@ -390,7 +386,7 @@ public class Registry extends ImmutableObject implements Buildable {
   }
 
   /** The static {@link PremiumList} for this TLD, if there is one. */
-  @Nullable @Transient Key<PremiumList> premiumList;
+  @Nullable Key<PremiumList> premiumList;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
   @Column(nullable = false)

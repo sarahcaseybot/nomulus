@@ -906,15 +906,16 @@ CREATE TABLE public."Tld" (
     create_billing_cost_currency text,
     creation_time timestamp with time zone NOT NULL,
     currency text NOT NULL,
-    disable_invoicing boolean NOT NULL,
     dns_paused boolean NOT NULL,
     dns_writers text[] NOT NULL,
     drive_folder_id text,
     eap_fee_schedule public.hstore NOT NULL,
     escrow_enabled boolean NOT NULL,
+    invoicing_enabled boolean NOT NULL,
     lordn_username text,
     num_dns_publish_locks integer NOT NULL,
     pending_delete_length interval NOT NULL,
+    premium_list text,
     pricing_engine_class_name text,
     redemption_grace_period_length interval NOT NULL,
     renew_billing_cost_transitions public.hstore NOT NULL,
@@ -928,6 +929,16 @@ CREATE TABLE public."Tld" (
     tld_type text NOT NULL,
     tld_unicode text NOT NULL,
     transfer_grace_period_length interval NOT NULL
+);
+
+
+--
+-- Name: Tld_reservedLists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Tld_reservedLists" (
+    tld_tld_name text NOT NULL,
+    reserved_lists text
 );
 
 
