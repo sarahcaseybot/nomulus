@@ -915,11 +915,12 @@ CREATE TABLE public."Tld" (
     lordn_username text,
     num_dns_publish_locks integer NOT NULL,
     pending_delete_length interval NOT NULL,
-    premium_list text,
+    premium_list_name text,
     pricing_engine_class_name text,
     redemption_grace_period_length interval NOT NULL,
     renew_billing_cost_transitions public.hstore NOT NULL,
     renew_grace_period_length interval NOT NULL,
+    reserved_list_names text[] NOT NULL,
     restore_billing_cost_amount numeric(19,2),
     restore_billing_cost_currency text,
     roid_suffix text,
@@ -929,16 +930,6 @@ CREATE TABLE public."Tld" (
     tld_type text NOT NULL,
     tld_unicode text NOT NULL,
     transfer_grace_period_length interval NOT NULL
-);
-
-
---
--- Name: Tld_reservedLists; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."Tld_reservedLists" (
-    tld_tld_name text NOT NULL,
-    reserved_lists text
 );
 
 

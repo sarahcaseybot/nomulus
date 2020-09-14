@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-create table "Tld" (
+  create table "Tld" (
        tld_name text not null,
         add_grace_period_length interval not null,
         allowed_fully_qualified_host_names text[],
@@ -34,11 +34,12 @@ create table "Tld" (
         lordn_username text,
         num_dns_publish_locks int4 not null,
         pending_delete_length interval not null,
-        premium_list text,
+        premium_list_name text,
         pricing_engine_class_name text,
         redemption_grace_period_length interval not null,
         renew_billing_cost_transitions hstore not null,
         renew_grace_period_length interval not null,
+        reserved_list_names text[] not null,
         restore_billing_cost_amount numeric(19, 2),
         restore_billing_cost_currency text,
         roid_suffix text,
@@ -49,9 +50,4 @@ create table "Tld" (
         tld_unicode text not null,
         transfer_grace_period_length interval not null,
         primary key (tld_name)
-    );
-
-    create table "Tld_reservedLists" (
-       tld_tld_name text not null,
-        reserved_lists text
     );

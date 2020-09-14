@@ -602,11 +602,12 @@ create sequence temp_history_id_sequence start 1 increment 50;
         lordn_username text,
         num_dns_publish_locks int4 not null,
         pending_delete_length interval not null,
-        premium_list text,
+        premium_list_name text,
         pricing_engine_class_name text,
         redemption_grace_period_length interval not null,
         renew_billing_cost_transitions hstore not null,
         renew_grace_period_length interval not null,
+        reserved_list_names text[] not null,
         restore_billing_cost_amount numeric(19, 2),
         restore_billing_cost_currency text,
         roid_suffix text,
@@ -617,11 +618,6 @@ create sequence temp_history_id_sequence start 1 increment 50;
         tld_unicode text not null,
         transfer_grace_period_length interval not null,
         primary key (tld_name)
-    );
-
-    create table "Tld_reservedLists" (
-       tld_tld_name text not null,
-        reserved_lists text
     );
 
     create table "Transaction" (
@@ -717,8 +713,3 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
        foreign key (revision_id) 
        references "ReservedList";
-
-    alter table if exists "Tld_reservedLists" 
-       add constraint FK34sdxpu885k3f4gqkj3uncgj8 
-       foreign key (tld_tld_name) 
-       references "Tld";
