@@ -377,10 +377,8 @@ public class Registry extends ImmutableObject implements Buildable {
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved lists that are applicable to this registry. */
-  @Transient Set<Key<ReservedList>> reservedLists;
-
   @Column(name = "reserved_list_names", nullable = false)
-  Set<String> reservedListNames;
+  Set<Key<ReservedList>> reservedLists;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
   public ImmutableSet<Key<ReservedList>> getReservedLists() {
@@ -855,13 +853,10 @@ public class Registry extends ImmutableObject implements Buildable {
     public Builder setReservedLists(Set<ReservedList> reservedLists) {
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
       ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
-      ImmutableSet.Builder<String> namesBuilder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
         builder.add(Key.create(reservedList));
-        namesBuilder.add(reservedList.getName());
       }
       getInstance().reservedLists = builder.build();
-      getInstance().reservedListNames = namesBuilder.build();
       return this;
     }
 

@@ -22,10 +22,12 @@ import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.testing.AppEngineExtension;
+import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 /** Unit tests for {@link ReservedListKeyConverter}. */
 class ReservedListKeyConverterTest {
@@ -34,56 +36,51 @@ class ReservedListKeyConverterTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
-          .withJpaUnitTestEntities(ReservedListEntity.class)
+          .withJpaUnitTestEntities(ReservedListSetEntity.class)
           .build();
 
-  private final ReservedListKeyConverter converter = new ReservedListKeyConverter();
-
   @Test
-  void convertToDatabaseColumn_returnsNullIfInputIsNull() {
-    assertThat(converter.convertToDatabaseColumn(null)).isNull();
-  }
+  void roundTripConversion_returnsSameSet() {
+    Key<ReservedList> key1 = Key.create(getCrossTldKey(), ReservedList.class, "test1");
+    Key<ReservedList> key2 = Key.create(getCrossTldKey(), ReservedList.class, "test2");
+    Key<ReservedList> key3 = Key.create(getCrossTldKey(), ReservedList.class, "test3");
 
-  @Test
-  void convertToDatabaseColumn_convertsCorrectly() {
-    assertThat(
-            converter.convertToDatabaseColumn(
-                Key.create(getCrossTldKey(), ReservedList.class, "testList")))
-        .isEqualTo("testList");
-  }
-
-  @Test
-  void convertToEntityAttribute_returnsNullIfInputIsNull() {
-    assertThat(converter.convertToEntityAttribute(null)).isNull();
-  }
-
-  @Test
-  void convertToEntityAttribute_convertsCorrectly() {
-    assertThat(converter.convertToEntityAttribute("testList"))
-        .isEqualTo(Key.create(getCrossTldKey(), ReservedList.class, "testList"));
-  }
-
-  @Test
-  void testRoundTrip() {
-    Key<ReservedList> key = Key.create(getCrossTldKey(), ReservedList.class, "test");
-    ReservedListEntity testEntity = new ReservedListEntity(key);
+    Set<Key<ReservedList>> reservedLists = ImmutableSet.of(key1, key2, key3);
+    ReservedListSetEntity testEntity = new ReservedListSetEntity(reservedLists);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
-    ReservedListEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(ReservedListEntity.class, "test"));
-    assertThat(persisted.reservedList).isEqualTo(key);
+    ReservedListSetEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(ReservedListSetEntity.class, "id"));
+    assertThat(persisted.reservedList).containsExactly(key1, key2, key3);
   }
 
-  @Entity(name = "ReservedListEntity")
-  private static class ReservedListEntity extends ImmutableObject {
+  @Test
+  void testNullValue_writesAndReadsNullSuccessfully() {
+    ReservedListSetEntity testEntity = new ReservedListSetEntity(null);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    ReservedListSetEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(ReservedListSetEntity.class, "id"));
+    assertThat(persisted.reservedList).isNull();
+  }
 
-    @Id String name;
+  @Test
+  void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
+    ReservedListSetEntity testEntity = new ReservedListSetEntity(ImmutableSet.of());
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    ReservedListSetEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(ReservedListSetEntity.class, "id"));
+    assertThat(persisted.reservedList).isEmpty();
+  }
 
-    Key<ReservedList> reservedList;
+  @Entity(name = "ReservedListSetEntity")
+  private static class ReservedListSetEntity extends ImmutableObject {
 
-    public ReservedListEntity() {}
+    @Id String name = "id";
 
-    ReservedListEntity(Key<ReservedList> reservedList) {
-      this.name = reservedList.getName();
+    Set<Key<ReservedList>> reservedList;
+
+    public ReservedListSetEntity() {}
+
+    ReservedListSetEntity(Set<Key<ReservedList>> reservedList) {
       this.reservedList = reservedList;
     }
   }
