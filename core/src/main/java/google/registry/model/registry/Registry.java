@@ -75,6 +75,7 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -103,6 +104,12 @@ public class Registry extends ImmutableObject implements Buildable {
    * {@code __key__.name} rather than being exported as a named field.
    */
   @Transient String tldStr;
+
+  /** Sets the Datastore specific field, tldStr, when the entity is loaded from Cloud SQL */
+  @PostLoad
+  void postLoad() {
+    tldStr = tldStrId;
+  }
 
   /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
   String roidSuffix;

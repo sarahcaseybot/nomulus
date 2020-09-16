@@ -72,13 +72,10 @@ public class RegistryTest extends EntityTestCase {
     PremiumList pl = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry =
         Registry.get("tld").asBuilder().setReservedLists(rl15).setPremiumList(pl).build();
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().saveNew(registry);
-              Registry persisted = jpaTm().load(VKey.createSql(Registry.class, registry.tldStrId));
-              assertThat(persisted).isEqualTo(registry);
-            });
+    jpaTm().transact(() -> jpaTm().saveNew(registry));
+    Registry persisted =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(Registry.class, registry.tldStrId)));
+    assertThat(persisted).isEqualTo(registry);
   }
 
   @Test
