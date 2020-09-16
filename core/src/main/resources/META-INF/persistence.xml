@@ -82,7 +82,7 @@
     <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
     <class>google.registry.persistence.converter.PremiumListKeyConverter</class>
     <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
-    <class>google.registry.persistence.converter.ReservedListKeyConverter</class>
+    <class>google.registry.persistence.converter.ReservedListKeySetConverter</class>
     <class>google.registry.persistence.converter.Spec11ThreatMatchThreatTypeSetConverter</class>
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>

@@ -20,9 +20,9 @@ import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.ReservedList;
 import javax.persistence.Converter;
 
-/** JPA converter for a {@link Key} containing a {@link ReservedList} */
+/** JPA converter for a set of {@link Key} containing a {@link ReservedList} */
 @Converter(autoApply = true)
-public class ReservedListKeyConverter extends StringSetConverterBase<Key<ReservedList>> {
+public class ReservedListKeySetConverter extends StringSetConverterBase<Key<ReservedList>> {
 
   @Override
   String toString(Key<ReservedList> key) {

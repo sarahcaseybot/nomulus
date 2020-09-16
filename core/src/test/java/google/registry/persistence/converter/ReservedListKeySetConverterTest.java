@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
-/** Unit tests for {@link ReservedListKeyConverter}. */
-class ReservedListKeyConverterTest {
+/** Unit tests for {@link ReservedListKeySetConverter}. */
+class ReservedListKeySetConverterTest {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
