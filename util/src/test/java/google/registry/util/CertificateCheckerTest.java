@@ -18,16 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.util.CertificateChecker.CertificateViolation;
-import google.registry.util.CertificateChecker.EllipticCurveViolation;
-import google.registry.util.CertificateChecker.NotYetValidViolation;
-import google.registry.util.CertificateChecker.ValidityPeriodViolation;
-import java.security.AlgorithmParameters;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.ECParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -37,8 +30,7 @@ public class CertificateCheckerTest {
 
   private static final String SSL_HOST = "www.example.tld";
 
-  private static CertificateChecker certificateChecker =
-      new CertificateChecker(825, 30, 2048, ImmutableSet.of(256, 384));
+  private static CertificateChecker certificateChecker = new CertificateChecker(825, 30, 2048);
 
   @Test
   void test_compliantCertificate() throws Exception {
@@ -54,11 +46,8 @@ public class CertificateCheckerTest {
 
   @Test
   void test_certificateWithSeveralIssues() throws Exception {
-    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-    AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
-    apParam.init(new ECGenParameterSpec("secp128r1"));
-    ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
-    keyGen.initialize(spec, new SecureRandom());
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
+    keyGen.initialize(1024, new SecureRandom());
 
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
@@ -74,9 +63,14 @@ public class CertificateCheckerTest {
     assertThat(violations)
         .isEqualTo(
             ImmutableSet.of(
-                new NotYetValidViolation(),
-                new ValidityPeriodViolation(825),
-                new EllipticCurveViolation()));
+                CertificateViolation.create(
+                    "Not Yet Valid", "This certificate's start date has not yet passed."),
+                CertificateViolation.create(
+                    "Validity Period Too Long",
+                    "The certificate must have a validity length of less than 825 days."),
+                CertificateViolation.create(
+                    "RSA Key Length Too Long",
+                    String.format("The minimum RSA key length is %d.", 2048))));
   }
 
   @Test
@@ -90,7 +84,7 @@ public class CertificateCheckerTest {
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
     assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().getName()).isEqualTo("Expired Certificate");
+    assertThat(violations.iterator().next().name()).isEqualTo("Expired Certificate");
   }
 
   @Test
@@ -104,7 +98,7 @@ public class CertificateCheckerTest {
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
     assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().getName()).isEqualTo("Not Yet Valid");
+    assertThat(violations.iterator().next().name()).isEqualTo("Not Yet Valid");
   }
 
   @Test
@@ -118,8 +112,8 @@ public class CertificateCheckerTest {
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
     assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().getName()).isEqualTo("Validity Period Too Long");
-    assertThat(violations.iterator().next().getDisplayMessage())
+    assertThat(violations.iterator().next().name()).isEqualTo("Validity Period Too Long");
+    assertThat(violations.iterator().next().displayMessage())
         .isEqualTo("The certificate must have a validity length of less than 825 days.");
   }
 
@@ -161,90 +155,11 @@ public class CertificateCheckerTest {
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
     assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().getName()).isEqualTo("RSA Key Length Too Long");
+    assertThat(violations.iterator().next().name()).isEqualTo("RSA Key Length Too Long");
 
     // Key length higher than required
     keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
     keyGen.initialize(4096, new SecureRandom());
-
-    certificate =
-        SelfSignedCaCertificate.create(
-                keyGen.generateKeyPair(),
-                SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
-            .cert();
-
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of());
-  }
-
-  @Test
-  void test_checkEcCurve() throws Exception {
-    // Key lower than P-256
-    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-    AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
-    apParam.init(new ECGenParameterSpec("secp128r1"));
-    ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
-    keyGen.initialize(spec, new SecureRandom());
-
-    X509Certificate certificate =
-        SelfSignedCaCertificate.create(
-                keyGen.generateKeyPair(),
-                SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
-            .cert();
-
-    ImmutableSet<CertificateViolation> violations =
-        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().getName()).isEqualTo("Elliptic Curve Not Allowed");
-
-    // Curve higher than P-256
-    keyGen = KeyPairGenerator.getInstance("EC");
-    apParam = AlgorithmParameters.getInstance("EC");
-    apParam.init(new ECGenParameterSpec("secp521r1"));
-    spec = apParam.getParameterSpec(ECParameterSpec.class);
-    keyGen.initialize(spec, new SecureRandom());
-
-    certificate =
-        SelfSignedCaCertificate.create(
-                keyGen.generateKeyPair(),
-                SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
-            .cert();
-
-    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().getName()).isEqualTo("Elliptic Curve Not Allowed");
-
-    // Curve over 2^m field
-    keyGen = KeyPairGenerator.getInstance("EC");
-    apParam = AlgorithmParameters.getInstance("EC");
-    apParam.init(new ECGenParameterSpec("sect163k1"));
-    spec = apParam.getParameterSpec(ECParameterSpec.class);
-    keyGen.initialize(spec, new SecureRandom());
-
-    certificate =
-        SelfSignedCaCertificate.create(
-                keyGen.generateKeyPair(),
-                SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
-            .cert();
-
-    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().getName()).isEqualTo("Elliptic Curve Not Allowed");
-
-    // Curve is P-256
-    keyGen = KeyPairGenerator.getInstance("EC");
-    apParam = AlgorithmParameters.getInstance("EC");
-    apParam.init(new ECGenParameterSpec("secp256k1"));
-    spec = apParam.getParameterSpec(ECParameterSpec.class);
-    keyGen.initialize(spec, new SecureRandom());
 
     certificate =
         SelfSignedCaCertificate.create(

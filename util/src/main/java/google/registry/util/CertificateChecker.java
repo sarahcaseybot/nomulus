@@ -14,14 +14,12 @@
 
 package google.registry.util;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
-import java.util.Objects;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
-import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 
@@ -31,17 +29,11 @@ public class CertificateChecker {
   private final int maxValidityDays;
   private final int daysToExpiration;
   private final int minimumRsaKeyLength;
-  private final ImmutableSet<Integer> curves;
 
-  public CertificateChecker(
-      int maxValidityDays,
-      int daysToExpiration,
-      int minimumRsaKeyLength,
-      ImmutableSet<Integer> curves) {
+  public CertificateChecker(int maxValidityDays, int daysToExpiration, int minimumRsaKeyLength) {
     this.maxValidityDays = maxValidityDays;
     this.daysToExpiration = daysToExpiration;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
-    this.curves = curves;
   }
 
   /**
@@ -54,13 +46,21 @@ public class CertificateChecker {
 
     // Check Expiration
     if (certificate.getNotAfter().before(now)) {
-      violations.add(new ExpiredCertificateViolation());
+      violations.add(
+          CertificateViolation.create("Expired Certificate", "This certificate is expired."));
     } else if (certificate.getNotBefore().after(now)) {
-      violations.add(new NotYetValidViolation());
+      violations.add(
+          CertificateViolation.create(
+              "Not Yet Valid", "This certificate's start date has not yet passed."));
     }
     int validityLength = getValidityLengthInDays(certificate);
     if (validityLength > maxValidityDays) {
-      violations.add(new ValidityPeriodViolation(maxValidityDays));
+      violations.add(
+          CertificateViolation.create(
+              "Validity Period Too Long",
+              String.format(
+                  "The certificate must have a validity length of less than %d days.",
+                  maxValidityDays)));
     }
 
     // Check Key Strengths
@@ -68,14 +68,17 @@ public class CertificateChecker {
     if (key.getAlgorithm().equals("RSA")) {
       RSAPublicKey rsaPublicKey = (RSAPublicKey) key;
       if (rsaPublicKey.getModulus().bitLength() < minimumRsaKeyLength) {
-        violations.add(new RsaKeyLengthViolation(minimumRsaKeyLength));
+        violations.add(
+            CertificateViolation.create(
+                "RSA Key Length Too Long",
+                String.format("The minimum RSA key length is %d.", minimumRsaKeyLength)));
       }
     } else if (key.getAlgorithm().equals("EC")) {
-      if (!isEcCurveTypeValid((ECPublicKey) key, curves)) {
-        violations.add(new EllipticCurveViolation());
-      }
+      // TODO(sarahbot): Add verification of ECDSA curves
     } else {
-      violations.add(new CertificateAlgorithmViolation());
+      violations.add(
+          CertificateViolation.create(
+              "Certificate Algorithm Not Allowed", "Only RSA and ECDSA keys are accepted."));
     }
     return violations.build();
   }
@@ -94,104 +97,20 @@ public class CertificateChecker {
     DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
     return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
   }
+}
 
-  /** Returns true if a supported curve is used. */
-  private static boolean isEcCurveTypeValid(ECPublicKey key, ImmutableSet<Integer> curves) {
-    ECParameterSpec spec = key.getParameters();
-    if (spec != null) {
-      // a dimension value of 1 indicates the curve is over a prime field
-      if (spec.getCurve().getField().getDimension() != 1) {
-        return false;
-      }
-      return curves.contains(spec.getCurve().getOrder().bitLength());
-    }
-    return false; // Return false if we were unable to determine the curve
-  }
+/**
+ * The type of violation a certificate has based on the certificate requirements
+ * (go/registry-proxy-security).
+ */
+@AutoValue
+abstract class CertificateViolation {
 
-  /**
-   * The type of violation a certificate has based on the certificate requirements
-   * (go/registry-proxy-security).
-   */
-  public abstract static class CertificateViolation {
+  public abstract String name();
 
-    private final String name;
-    private final String displayMessage;
+  public abstract String displayMessage();
 
-    public String getName() {
-      return name;
-    }
-
-    public String getDisplayMessage() {
-      return displayMessage;
-    }
-
-    CertificateViolation(String name, String displayMessage) {
-      this.name = name;
-      this.displayMessage = displayMessage;
-    }
-
-    @Override
-    public boolean equals(Object violation) {
-      if (this == violation) {
-        return true;
-      }
-      if (violation == null || !getClass().isInstance(violation)) {
-        return false;
-      }
-      CertificateViolation certificateViolation = (CertificateViolation) violation;
-      return name.equals(certificateViolation.name)
-          && displayMessage.equals(certificateViolation.displayMessage);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(name, displayMessage);
-    }
-  }
-
-  public static class ExpiredCertificateViolation extends CertificateViolation {
-    ExpiredCertificateViolation() {
-      super("Expired Certificate", "This certificate is expired.");
-    }
-  }
-
-  public static class ValidityPeriodViolation extends CertificateViolation {
-    ValidityPeriodViolation(int maxValidityDays) {
-      super(
-          "Validity Period Too Long",
-          String.format(
-              "The certificate must have a validity length of less than %d days.",
-              maxValidityDays));
-    }
-  }
-
-  public static class NotYetValidViolation extends CertificateViolation {
-    NotYetValidViolation() {
-      super("Not Yet Valid", String.format("This certificate's start date has not yet passed."));
-    }
-  }
-
-  public static class RsaKeyLengthViolation extends CertificateViolation {
-    RsaKeyLengthViolation(int minimumRsaKeyLength) {
-      super(
-          "RSA Key Length Too Long",
-          String.format("The minimum RSA key length is %d.", minimumRsaKeyLength));
-    }
-  }
-
-  public static class EllipticCurveViolation extends CertificateViolation {
-    EllipticCurveViolation() {
-      super(
-          "Elliptic Curve Not Allowed",
-          String.format("This certificate uses an unsupported elliptic curve."));
-    }
-  }
-
-  public static class CertificateAlgorithmViolation extends CertificateViolation {
-    CertificateAlgorithmViolation() {
-      super(
-          "Certificate Algorithm Not Allowed",
-          String.format("Only RSA and ECDSA keys are accepted."));
-    }
+  public static CertificateViolation create(String name, String displayMessage) {
+    return new AutoValue_CertificateViolation(name, displayMessage);
   }
 }
