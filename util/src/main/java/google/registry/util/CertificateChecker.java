@@ -29,11 +29,42 @@ public class CertificateChecker {
   private final int maxValidityDays;
   private final int daysToExpiration;
   private final int minimumRsaKeyLength;
+  public final CertificateViolation certificateExpiredViolation;
+  public final CertificateViolation certificateNotYetValidViolation;
+  public final CertificateViolation certificateValidityLengthViolation;
+  public final CertificateViolation certificateOldValidityLengthValidViolation;
+  public final CertificateViolation certificateRsaKeyLengthViolation;
+  public final CertificateViolation certificateAlgorithmViolation;
 
   public CertificateChecker(int maxValidityDays, int daysToExpiration, int minimumRsaKeyLength) {
     this.maxValidityDays = maxValidityDays;
     this.daysToExpiration = daysToExpiration;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
+    this.certificateExpiredViolation =
+        CertificateViolation.create("Expired Certificate", "This certificate is expired.");
+    this.certificateNotYetValidViolation =
+        CertificateViolation.create(
+            "Not Yet Valid", "This certificate's start date has not yet passed.");
+    this.certificateOldValidityLengthValidViolation =
+        CertificateViolation.create(
+            "Validity Period Too Long",
+            String.format(
+                "The certificate must have a validity length of less than %d days if created"
+                    + " before 2020-09-01 and %d days if created after.",
+                825, maxValidityDays));
+    this.certificateValidityLengthViolation =
+        CertificateViolation.create(
+            "Validity Period Too Long",
+            String.format(
+                "The certificate must have a validity length of less than %d days.",
+                maxValidityDays));
+    this.certificateRsaKeyLengthViolation =
+        CertificateViolation.create(
+            "RSA Key Length Too Long",
+            String.format("The minimum RSA key length is %d.", minimumRsaKeyLength));
+    this.certificateAlgorithmViolation =
+        CertificateViolation.create(
+            "Certificate Algorithm Not Allowed", "Only RSA and ECDSA keys are accepted.");
   }
 
   /**
@@ -46,21 +77,19 @@ public class CertificateChecker {
 
     // Check Expiration
     if (certificate.getNotAfter().before(now)) {
-      violations.add(
-          CertificateViolation.create("Expired Certificate", "This certificate is expired."));
+      violations.add(certificateExpiredViolation);
     } else if (certificate.getNotBefore().after(now)) {
-      violations.add(
-          CertificateViolation.create(
-              "Not Yet Valid", "This certificate's start date has not yet passed."));
+      violations.add(certificateNotYetValidViolation);
     }
     int validityLength = getValidityLengthInDays(certificate);
     if (validityLength > maxValidityDays) {
-      violations.add(
-          CertificateViolation.create(
-              "Validity Period Too Long",
-              String.format(
-                  "The certificate must have a validity length of less than %d days.",
-                  maxValidityDays)));
+      if (certificate.getNotBefore().before(DateTime.parse("2020-09-01T00:00:00Z").toDate())) {
+        if (validityLength > 825) {
+          violations.add(certificateOldValidityLengthValidViolation);
+        }
+      } else {
+        violations.add(certificateValidityLengthViolation);
+      }
     }
 
     // Check Key Strengths
@@ -68,17 +97,12 @@ public class CertificateChecker {
     if (key.getAlgorithm().equals("RSA")) {
       RSAPublicKey rsaPublicKey = (RSAPublicKey) key;
       if (rsaPublicKey.getModulus().bitLength() < minimumRsaKeyLength) {
-        violations.add(
-            CertificateViolation.create(
-                "RSA Key Length Too Long",
-                String.format("The minimum RSA key length is %d.", minimumRsaKeyLength)));
+        violations.add(certificateRsaKeyLengthViolation);
       }
     } else if (key.getAlgorithm().equals("EC")) {
       // TODO(sarahbot): Add verification of ECDSA curves
     } else {
-      violations.add(
-          CertificateViolation.create(
-              "Certificate Algorithm Not Allowed", "Only RSA and ECDSA keys are accepted."));
+      violations.add(certificateAlgorithmViolation);
     }
     return violations.build();
   }

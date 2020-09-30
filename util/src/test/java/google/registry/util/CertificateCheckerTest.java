@@ -30,7 +30,7 @@ public class CertificateCheckerTest {
 
   private static final String SSL_HOST = "www.example.tld";
 
-  private static CertificateChecker certificateChecker = new CertificateChecker(825, 30, 2048);
+  private static CertificateChecker certificateChecker = new CertificateChecker(398, 30, 2048);
 
   @Test
   void test_compliantCertificate() throws Exception {
@@ -63,14 +63,10 @@ public class CertificateCheckerTest {
     assertThat(violations)
         .isEqualTo(
             ImmutableSet.of(
-                CertificateViolation.create(
-                    "Not Yet Valid", "This certificate's start date has not yet passed."),
-                CertificateViolation.create(
-                    "Validity Period Too Long",
-                    "The certificate must have a validity length of less than 825 days."),
-                CertificateViolation.create(
-                    "RSA Key Length Too Long",
-                    String.format("The minimum RSA key length is %d.", 2048))));
+                certificateChecker.certificateNotYetValidViolation,
+                certificateChecker.certificateValidityLengthViolation,
+                certificateChecker.certificateRsaKeyLengthViolation));
+    ;
   }
 
   @Test
@@ -83,8 +79,7 @@ public class CertificateCheckerTest {
             .cert();
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().name()).isEqualTo("Expired Certificate");
+    assertThat(violations).containsExactly(certificateChecker.certificateExpiredViolation);
   }
 
   @Test
@@ -97,8 +92,7 @@ public class CertificateCheckerTest {
             .cert();
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().name()).isEqualTo("Not Yet Valid");
+    assertThat(violations).containsExactly(certificateChecker.certificateNotYetValidViolation);
   }
 
   @Test
@@ -111,10 +105,26 @@ public class CertificateCheckerTest {
             .cert();
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().name()).isEqualTo("Validity Period Too Long");
-    assertThat(violations.iterator().next().displayMessage())
-        .isEqualTo("The certificate must have a validity length of less than 825 days.");
+    assertThat(violations).containsExactly(certificateChecker.certificateValidityLengthViolation);
+
+    certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.parse("2020-08-01T00:00:00Z").toDate(),
+                DateTime.parse("2023-11-01T00:00:00Z").toDate())
+            .cert();
+    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations)
+        .containsExactly(certificateChecker.certificateOldValidityLengthValidViolation);
+
+    certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.parse("2020-08-01T00:00:00Z").toDate(),
+                DateTime.parse("2021-11-01T00:00:00Z").toDate())
+            .cert();
+    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).isEmpty();
   }
 
   @Test
@@ -154,8 +164,7 @@ public class CertificateCheckerTest {
 
     ImmutableSet<CertificateViolation> violations =
         certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(1);
-    assertThat(violations.iterator().next().name()).isEqualTo("RSA Key Length Too Long");
+    assertThat(violations).containsExactly(certificateChecker.certificateRsaKeyLengthViolation);
 
     // Key length higher than required
     keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
