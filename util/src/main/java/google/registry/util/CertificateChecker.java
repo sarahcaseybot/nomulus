@@ -49,9 +49,9 @@ public class CertificateChecker {
         CertificateViolation.create(
             "Validity Period Too Long",
             String.format(
-                "The certificate must have a validity length of less than %d days if created"
-                    + " before 2020-09-01 and %d days if created after.",
-                825, maxValidityDays));
+                "The certificate's validity length must be less than or equal to %d days, or %d"
+                    + " days if issued prior to 2020-09-01.",
+                maxValidityDays, 825));
     this.certificateValidityLengthViolation =
         CertificateViolation.create(
             "Validity Period Too Long",
@@ -83,7 +83,8 @@ public class CertificateChecker {
     }
     int validityLength = getValidityLengthInDays(certificate);
     if (validityLength > maxValidityDays) {
-      if (certificate.getNotBefore().before(DateTime.parse("2020-09-01T00:00:00Z").toDate())) {
+      if (new DateTime(certificate.getNotBefore())
+          .isBefore(DateTime.parse("2020-09-01T00:00:00Z"))) {
         if (validityLength > 825) {
           violations.add(certificateOldValidityLengthValidViolation);
         }

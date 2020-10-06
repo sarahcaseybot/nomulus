@@ -14,7 +14,7 @@
 
 package google.registry.util;
 
-import static com.google.appengine.repackaged.com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.ImmutableMap;
 import java.math.BigInteger;
@@ -102,11 +102,11 @@ public class SelfSignedCaCertificate {
   static X509Certificate createCaCert(KeyPair keyPair, String fqdn, Date from, Date to)
       throws Exception {
     X500Name owner = new X500Name("CN=" + fqdn);
-    ContentSigner signer;
     String publicKeyAlg = keyPair.getPublic().getAlgorithm();
     checkArgument(KEY_SIGNATURE_ALGS.containsKey(publicKeyAlg), "Unexpected public key algorithm");
     String signatureAlgorithm = KEY_SIGNATURE_ALGS.get(publicKeyAlg);
-    signer = new JcaContentSignerBuilder(signatureAlgorithm).build(keyPair.getPrivate());
+    ContentSigner signer =
+        new JcaContentSignerBuilder(signatureAlgorithm).build(keyPair.getPrivate());
     X509v3CertificateBuilder builder =
         new JcaX509v3CertificateBuilder(
             owner, new BigInteger(64, RANDOM), from, to, owner, keyPair.getPublic());
