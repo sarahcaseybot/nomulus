@@ -39,7 +39,7 @@ public class RegistryConfigSettings {
   public Beam beam;
   public Keyring keyring;
   public RegistryTool registryTool;
-  public CertChecker certChecker;
+  public SslCertificateValidation sslCertificateValidation;
 
   /** Configuration options that apply to the entire App Engine project. */
   public static class AppEngine {
@@ -222,9 +222,9 @@ public class RegistryConfigSettings {
   }
 
   /** Configuration for the certificate checker. */
-  public static class CertChecker {
-    public Map<String, Integer> maxValidityDays;
-    public int daysToExpiration;
+  public static class SslCertificateValidation {
+    public Map<String, Integer> maxValidityDaysSchedule;
+    public int expirationWarningDays;
     public int minimumRsaKeyLength;
   }
 }

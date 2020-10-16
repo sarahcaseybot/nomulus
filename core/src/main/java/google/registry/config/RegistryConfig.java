@@ -16,10 +16,12 @@ package google.registry.config;
 
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static google.registry.config.ConfigUtils.makeUrl;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.util.Comparator.naturalOrder;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
@@ -1350,29 +1352,30 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("validityDaysMap")
+    @Config("maxValidityDaysSchedule")
     public static ImmutableSortedMap<DateTime, Integer> provideValidityDaysMap(
         RegistryConfigSettings config) {
-      Map<String, Integer> stringMap = config.certChecker.maxValidityDays;
-      ImmutableSortedMap.Builder<DateTime, Integer> validityDaysMap =
-          ImmutableSortedMap.naturalOrder();
-      stringMap.forEach(
-          (k, v) ->
-              validityDaysMap.put(
-                  k.equals("START_OF_TIME") ? START_OF_TIME : DateTime.parse(k), v));
-      return validityDaysMap.build();
+      return config.sslCertificateValidation.maxValidityDaysSchedule.entrySet().stream()
+          .collect(
+              toImmutableSortedMap(
+                  naturalOrder(),
+                  e ->
+                      e.getKey().equals("START_OF_TIME")
+                          ? START_OF_TIME
+                          : DateTime.parse(e.getKey()),
+                  e -> e.getValue()));
     }
 
     @Provides
-    @Config("daysToExpiration")
+    @Config("expirationWarningDays")
     public static int provideDaysToExpiration(RegistryConfigSettings config) {
-      return config.certChecker.daysToExpiration;
+      return config.sslCertificateValidation.expirationWarningDays;
     }
 
     @Provides
     @Config("minimumRsaKeyLength")
     public static int provideMinimumRsaKeyLength(RegistryConfigSettings config) {
-      return config.certChecker.minimumRsaKeyLength;
+      return config.sslCertificateValidation.minimumRsaKeyLength;
     }
   }
 

@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.joda.money.CurrencyUnit;
@@ -364,6 +365,9 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
       if (clientCertificateFilename != null) {
         String asciiCert = new String(Files.readAllBytes(clientCertificateFilename), US_ASCII);
+        // An empty certificate file is allowed in order to provide a functionality for removing an
+        // existing certificate without providing a replacement. An uploaded empty certificate file
+        // will prevent the registrar from being able to establish EPP connections.
         if (!asciiCert.equals("")) {
           X509Certificate certificate =
               (X509Certificate)
@@ -372,12 +376,11 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
           ImmutableSet<CertificateViolation> violations =
               certificateChecker.checkCertificate(certificate);
           if (!violations.isEmpty()) {
-            ImmutableSet<String> displayMessages =
+            String displayMessages =
                 violations.stream()
                     .map(violation -> violation.getDisplayMessage(certificateChecker))
-                    .collect(toImmutableSet());
-            throw new CertificateException(
-                displayMessages.toString().replace("[", "").replace("]", "\n").replace(", ", "\n"));
+                    .collect(Collectors.joining("\n"));
+            throw new CertificateException(displayMessages);
           }
         }
         builder.setClientCertificate(asciiCert, now);

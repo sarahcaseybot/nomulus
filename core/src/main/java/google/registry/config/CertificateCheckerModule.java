@@ -19,21 +19,22 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.CertificateChecker;
-import google.registry.util.SystemClock;
+import google.registry.util.Clock;
 import javax.inject.Singleton;
 import org.joda.time.DateTime;
 
+/** Dagger module that provides the {@link CertificateChecker} used in the application. */
 @Module
 public abstract class CertificateCheckerModule {
 
   @Provides
   @Singleton
   static CertificateChecker provideCertificateChecker(
-      @Config("validityDaysMap") ImmutableSortedMap<DateTime, Integer> validityDaysMap,
-      @Config("daysToExpiration") int daysToExpiration,
-      @Config("minimumRsaKeyLength") int minimumRsaKeyLength) {
-    return new CertificateChecker(
-        validityDaysMap, daysToExpiration, minimumRsaKeyLength, new SystemClock());
+      @Config("maxValidityDaysSchedule") ImmutableSortedMap<DateTime, Integer> validityDaysMap,
+      @Config("expirationWarningDays") int daysToExpiration,
+      @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
+      Clock clock) {
+    return new CertificateChecker(validityDaysMap, daysToExpiration, minimumRsaKeyLength, clock);
   }
 
   private CertificateCheckerModule() {}
