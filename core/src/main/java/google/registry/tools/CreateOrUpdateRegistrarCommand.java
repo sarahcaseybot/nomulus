@@ -389,6 +389,21 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       if (failoverClientCertificateFilename != null) {
         String asciiCert =
             new String(Files.readAllBytes(failoverClientCertificateFilename), US_ASCII);
+        if (!asciiCert.equals("")) {
+          X509Certificate certificate =
+              (X509Certificate)
+                  CertificateFactory.getInstance("X509")
+                      .generateCertificate(new ByteArrayInputStream(asciiCert.getBytes(UTF_8)));
+          ImmutableSet<CertificateViolation> violations =
+              certificateChecker.checkCertificate(certificate);
+          if (!violations.isEmpty()) {
+            String displayMessages =
+                violations.stream()
+                    .map(violation -> violation.getDisplayMessage(certificateChecker))
+                    .collect(Collectors.joining("\n"));
+            throw new CertificateException(displayMessages);
+          }
+        }
         builder.setFailoverClientCertificate(asciiCert, now);
       }
       if (!isNullOrEmpty(clientCertificateHash)) {

@@ -296,6 +296,50 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
+  void testFail_failoverCertFileWithViolation() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    CertificateException thrown =
+        assertThrows(
+            CertificateException.class,
+            () ->
+                runCommand("--failover_cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Certificate validity period is too long; it must be less than or equal to 398"
+                + " days.");
+    assertThat(registrar.getFailoverClientCertificate()).isNull();
+  }
+
+  @Test
+  void testFail_failoverCertFileWithMultipleViolations() throws Exception {
+    fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    CertificateException thrown =
+        assertThrows(
+            CertificateException.class,
+            () ->
+                runCommand("--failover_cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Certificate is expired.\nCertificate validity period is too long; it must be less"
+                + " than or equal to 398 days.");
+    assertThat(registrar.getFailoverClientCertificate()).isNull();
+  }
+
+  @Test
+  void testSuccess_failoverCertFile() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    runCommand("--failover_cert_file=" + getCertFilename(SAMPLE_CERT3), "--force", "NewRegistrar");
+    registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getFailoverClientCertificate()).isEqualTo(SAMPLE_CERT3);
+  }
+
+  @Test
   void testSuccess_certHash() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getClientCertificateHash()).isNull();
     runCommand("--cert_hash=" + SAMPLE_CERT_HASH, "--force", "NewRegistrar");
