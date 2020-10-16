@@ -92,9 +92,7 @@ interface RegistryToolComponent {
   void inject(CreateCdnsTld command);
   void inject(CreateContactCommand command);
   void inject(CreateDomainCommand command);
-
   void inject(CreateRegistrarCommand command);
-
   void inject(CreateTldCommand command);
   void inject(DeployInvoicingPipelineCommand command);
   void inject(DeploySpec11PipelineCommand command);
@@ -122,9 +120,7 @@ interface RegistryToolComponent {
   void inject(UpdateCursorsCommand command);
   void inject(UpdateDomainCommand command);
   void inject(UpdateKmsKeyringCommand command);
-
   void inject(UpdateRegistrarCommand command);
-
   void inject(UpdateTldCommand command);
   void inject(ValidateEscrowDepositCommand command);
   void inject(WhoisQueryCommand command);

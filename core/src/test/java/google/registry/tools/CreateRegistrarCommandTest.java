@@ -441,7 +441,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "Certificate is expired., Certificate validity period is too long; it must be less"
+            "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.\n");
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isEmpty();

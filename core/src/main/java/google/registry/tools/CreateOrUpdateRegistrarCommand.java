@@ -377,7 +377,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
                     .map(violation -> violation.getDisplayMessage(certificateChecker))
                     .collect(toImmutableSet());
             throw new CertificateException(
-                displayMessages.toString().replace("[", "").replace("]", "\n"));
+                displayMessages.toString().replace("[", "").replace("]", "\n").replace(", ", "\n"));
           }
         }
         builder.setClientCertificate(asciiCert, now);

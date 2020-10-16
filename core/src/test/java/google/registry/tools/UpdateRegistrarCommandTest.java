@@ -290,7 +290,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             () -> runCommand("--cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
         .isEqualTo(
-            "Certificate is expired., Certificate validity period is too long; it must be less"
+            "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.\n");
     assertThat(registrar.getClientCertificate()).isNull();
   }
