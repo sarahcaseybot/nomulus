@@ -369,19 +369,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         // existing certificate without providing a replacement. An uploaded empty certificate file
         // will prevent the registrar from being able to establish EPP connections.
         if (!asciiCert.equals("")) {
-          X509Certificate certificate =
-              (X509Certificate)
-                  CertificateFactory.getInstance("X509")
-                      .generateCertificate(new ByteArrayInputStream(asciiCert.getBytes(UTF_8)));
-          ImmutableSet<CertificateViolation> violations =
-              certificateChecker.checkCertificate(certificate);
-          if (!violations.isEmpty()) {
-            String displayMessages =
-                violations.stream()
-                    .map(violation -> violation.getDisplayMessage(certificateChecker))
-                    .collect(Collectors.joining("\n"));
-            throw new CertificateException(displayMessages);
-          }
+          verifyCertificate(asciiCert);
         }
         builder.setClientCertificate(asciiCert, now);
       }
@@ -390,19 +378,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         String asciiCert =
             new String(Files.readAllBytes(failoverClientCertificateFilename), US_ASCII);
         if (!asciiCert.equals("")) {
-          X509Certificate certificate =
-              (X509Certificate)
-                  CertificateFactory.getInstance("X509")
-                      .generateCertificate(new ByteArrayInputStream(asciiCert.getBytes(UTF_8)));
-          ImmutableSet<CertificateViolation> violations =
-              certificateChecker.checkCertificate(certificate);
-          if (!violations.isEmpty()) {
-            String displayMessages =
-                violations.stream()
-                    .map(violation -> violation.getDisplayMessage(certificateChecker))
-                    .collect(Collectors.joining("\n"));
-            throw new CertificateException(displayMessages);
-          }
+          verifyCertificate(asciiCert);
         }
         builder.setFailoverClientCertificate(asciiCert, now);
       }
@@ -503,6 +479,22 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
 
       stageEntityChange(oldRegistrar, newRegistrar);
+    }
+  }
+
+  private void verifyCertificate(String certificateString) throws CertificateException {
+    X509Certificate certificate =
+        (X509Certificate)
+            CertificateFactory.getInstance("X509")
+                .generateCertificate(new ByteArrayInputStream(certificateString.getBytes(UTF_8)));
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate);
+    if (!violations.isEmpty()) {
+      String displayMessages =
+          violations.stream()
+              .map(violation -> violation.getDisplayMessage(certificateChecker))
+              .collect(Collectors.joining("\n"));
+      throw new CertificateException(displayMessages);
     }
   }
 

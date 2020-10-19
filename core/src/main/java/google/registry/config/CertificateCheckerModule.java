@@ -24,6 +24,9 @@ import javax.inject.Singleton;
 import org.joda.time.DateTime;
 
 /** Dagger module that provides the {@link CertificateChecker} used in the application. */
+// TODO(sarahbot@): Move this module to a better location. Possibly flows/. If we decide to move
+// CertificateChecker.java to core/ delete this file and inject the CertificateChecker constructor
+// instead.
 @Module
 public abstract class CertificateCheckerModule {
 

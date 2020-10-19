@@ -85,44 +85,83 @@ import javax.inject.Singleton;
     })
 interface RegistryToolComponent {
   void inject(AckPollMessagesCommand command);
+
   void inject(CheckDomainClaimsCommand command);
+
   void inject(CheckDomainCommand command);
+
   void inject(CountDomainsCommand command);
+
   void inject(CreateAnchorTenantCommand command);
+
   void inject(CreateCdnsTld command);
+
   void inject(CreateContactCommand command);
+
   void inject(CreateDomainCommand command);
+
   void inject(CreateRegistrarCommand command);
+
   void inject(CreateTldCommand command);
+
   void inject(DeployInvoicingPipelineCommand command);
+
   void inject(DeploySpec11PipelineCommand command);
+
   void inject(EncryptEscrowDepositCommand command);
+
   void inject(GenerateAllocationTokensCommand command);
+
   void inject(GenerateDnsReportCommand command);
+
   void inject(GenerateEscrowDepositCommand command);
+
   void inject(GetKeyringSecretCommand command);
+
   void inject(GetOperationStatusCommand command);
+
   void inject(GhostrydeCommand command);
+
   void inject(ImportDatastoreCommand command);
+
   void inject(ListCursorsCommand command);
+
   void inject(ListDatastoreOperationsCommand command);
+
   void inject(LoadSnapshotCommand command);
+
   void inject(LockDomainCommand command);
+
   void inject(LoginCommand command);
+
   void inject(LogoutCommand command);
+
   void inject(PendingEscrowCommand command);
+
   void inject(RenewDomainCommand command);
+
   void inject(SendEscrowReportToIcannCommand command);
+
   void inject(SetNumInstancesCommand command);
+
   void inject(SetupOteCommand command);
+
   void inject(UnlockDomainCommand command);
+
   void inject(UnrenewDomainCommand command);
+
   void inject(UpdateCursorsCommand command);
+
   void inject(UpdateDomainCommand command);
+
   void inject(UpdateKmsKeyringCommand command);
+
   void inject(UpdateRegistrarCommand command);
+
   void inject(UpdateTldCommand command);
+
   void inject(ValidateEscrowDepositCommand command);
+
   void inject(WhoisQueryCommand command);
 
   AppEngineConnection appEngineConnection();
