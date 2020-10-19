@@ -25,6 +25,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Ascii;
@@ -56,14 +57,21 @@ import google.registry.ui.forms.FormFieldException;
 import google.registry.ui.server.RegistrarFormFields;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.AppEngineServiceUtils;
+import google.registry.util.CertificateChecker;
+import google.registry.util.CertificateChecker.CertificateViolation;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DiffUtils;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -92,6 +100,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   @Inject SendEmailUtils sendEmailUtils;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject AuthResult authResult;
+  @Inject CertificateChecker certificateChecker;
 
   @Inject RegistrarSettingsAction() {}
 
@@ -309,14 +318,43 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     RegistrarFormFields.CLIENT_CERTIFICATE_FIELD
         .extractUntyped(args)
         .ifPresent(
-            certificate -> builder.setClientCertificate(certificate, tm().getTransactionTime()));
+            certificateString -> {
+              validateCertificate(certificateString);
+              builder.setClientCertificate(certificateString, tm().getTransactionTime());
+            });
     RegistrarFormFields.FAILOVER_CLIENT_CERTIFICATE_FIELD
         .extractUntyped(args)
         .ifPresent(
-            certificate ->
-                builder.setFailoverClientCertificate(certificate, tm().getTransactionTime()));
+            certificateString -> {
+              validateCertificate(certificateString);
+              builder.setFailoverClientCertificate(certificateString, tm().getTransactionTime());
+            });
 
     return checkNotChangedUnlessAllowed(builder, initialRegistrar, Role.OWNER);
+  }
+
+  private void validateCertificate(String certificateString) {
+    if(tm().getTransactionTime().isBefore(DateTime.parse("2020-11-01T00:00:00Z"))){
+      return;
+    }
+    X509Certificate certificate;
+    try {
+      certificate =
+          (X509Certificate)
+              CertificateFactory.getInstance("X509")
+                  .generateCertificate(new ByteArrayInputStream(certificateString.getBytes(UTF_8)));
+    } catch (CertificateException e) {
+      throw new IllegalArgumentException("Unable to read given certificate.");
+    }
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate);
+    if (!violations.isEmpty()) {
+      String displayMessages =
+          violations.stream()
+              .map(violation -> violation.getDisplayMessage(certificateChecker))
+              .collect(Collectors.joining("\n"));
+      throw new IllegalArgumentException(displayMessages);
+    }
   }
 
   /**

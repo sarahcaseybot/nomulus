@@ -43,6 +43,7 @@ import google.registry.util.EmailMessage;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Test;
@@ -367,20 +368,122 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
 
   @Test
   void testUpdate_clientCertificate() {
+    clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
     doTestUpdate(
         Role.OWNER,
         Registrar::getClientCertificate,
-        CertificateSamples.SAMPLE_CERT,
+        CertificateSamples.SAMPLE_CERT3,
         (builder, s) -> builder.setClientCertificate(s, clock.nowUtc()));
   }
 
   @Test
+  void testUpdate_clientCertificateWithViolationsFails() {
+    clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
+    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
+    args.put("clientCertificate", CertificateSamples.SAMPLE_CERT);
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "op", "update",
+                "id", CLIENT_ID,
+                "args", args));
+
+    assertThat(response)
+        .containsExactly(
+            "status",
+            "ERROR",
+            "results",
+            ImmutableList.of(),
+            "message",
+            "Certificate validity period is too long; it must be less than or equal to 398"
+                + " days.");
+    assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
+    assertNoTasksEnqueued("sheet");
+  }
+
+  @Test
+  void testUpdate_clientCertificateWithMultipleViolationsFails() {
+    clock.setTo(DateTime.parse("2055-11-01T00:00:00Z"));
+    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
+    args.put("clientCertificate", CertificateSamples.SAMPLE_CERT);
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "op", "update",
+                "id", CLIENT_ID,
+                "args", args));
+
+    assertThat(response)
+        .containsExactly(
+            "status",
+            "ERROR",
+            "results",
+            ImmutableList.of(),
+            "message",
+            "Certificate is expired.\nCertificate validity period is too long; it must be less"
+                + " than or equal to 398 days.");
+    assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
+    assertNoTasksEnqueued("sheet");
+  }
+
+  @Test
   void testUpdate_failoverClientCertificate() {
+    clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
     doTestUpdate(
         Role.OWNER,
         Registrar::getFailoverClientCertificate,
-        CertificateSamples.SAMPLE_CERT,
+        CertificateSamples.SAMPLE_CERT3,
         (builder, s) -> builder.setFailoverClientCertificate(s, clock.nowUtc()));
+  }
+
+  @Test
+  void testUpdate_failoverClientCertificateWithViolationsFails() {
+    clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
+    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
+    args.put("failoverClientCertificate", CertificateSamples.SAMPLE_CERT);
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "op", "update",
+                "id", CLIENT_ID,
+                "args", args));
+
+    assertThat(response)
+        .containsExactly(
+            "status",
+            "ERROR",
+            "results",
+            ImmutableList.of(),
+            "message",
+            "Certificate validity period is too long; it must be less than or equal to 398"
+                + " days.");
+    assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
+    assertNoTasksEnqueued("sheet");
+  }
+
+  @Test
+  void testUpdate_failoverClientCertificateWithMultipleViolationsFails() {
+    clock.setTo(DateTime.parse("2055-11-01T00:00:00Z"));
+    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
+    args.put("failoverClientCertificate", CertificateSamples.SAMPLE_CERT);
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "op", "update",
+                "id", CLIENT_ID,
+                "args", args));
+
+    assertThat(response)
+        .containsExactly(
+            "status",
+            "ERROR",
+            "results",
+            ImmutableList.of(),
+            "message",
+            "Certificate is expired.\nCertificate validity period is too long; it must be less"
+                + " than or equal to 398 days.");
+    assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
+    assertNoTasksEnqueued("sheet");
   }
 
   @Test
