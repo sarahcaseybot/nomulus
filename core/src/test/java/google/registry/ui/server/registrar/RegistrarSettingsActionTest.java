@@ -377,6 +377,50 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
+  void testUpdate_clientCertificateWithViolationsBeforeNovemberSucceeds() {
+    // TODO(sarahbot): remove this test after November 1, 2020.
+    clock.setTo(DateTime.parse("2018-07-02T00:00:00Z"));
+    doTestUpdate(
+        Role.OWNER,
+        Registrar::getClientCertificate,
+        CertificateSamples.SAMPLE_CERT,
+        (builder, s) -> builder.setClientCertificate(s, clock.nowUtc()));
+  }
+
+  @Test
+  void testUpdate_clientCertificateWithViolationsAlreadyExistedSucceeds() {
+    // TODO(sarahbot): remove this test after November 1, 2020.
+
+    // The frontend will always send the entire registrar entity back for an update, so the checks
+    // on the certificate should only run if it is a new certificate
+
+    // Set a bad certificate before checks on uploads are enforced
+    clock.setTo(DateTime.parse("2018-07-02T00:00:00Z"));
+    Registrar existingRegistrar = loadRegistrar(CLIENT_ID);
+    existingRegistrar =
+        existingRegistrar
+            .asBuilder()
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
+            .build();
+    persistResource(existingRegistrar);
+
+    // Update with the same certificate after enforcement starts
+    clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
+    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
+    args.put("clientCertificate", CertificateSamples.SAMPLE_CERT);
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "op", "update",
+                "id", CLIENT_ID,
+                "args", args));
+
+    assertThat(response).containsEntry("status", "SUCCESS");
+    assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
+    assertNoTasksEnqueued("sheet");
+  }
+
+  @Test
   void testUpdate_clientCertificateWithViolationsFails() {
     clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
@@ -434,6 +478,39 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
         Registrar::getFailoverClientCertificate,
         CertificateSamples.SAMPLE_CERT3,
         (builder, s) -> builder.setFailoverClientCertificate(s, clock.nowUtc()));
+  }
+
+  @Test
+  void testUpdate_failoverClientCertificateWithViolationsAlreadyExistedSucceeds() {
+    // TODO(sarahbot): remove this test after November 1, 2020.
+
+    // The frontend will always send the entire registrar entity back for an update, so the checks
+    // on the certificate should only run if it is a new certificate
+
+    // Set a bad certificate before checks on uploads are enforced
+    clock.setTo(DateTime.parse("2018-07-02T00:00:00Z"));
+    Registrar existingRegistrar = loadRegistrar(CLIENT_ID);
+    existingRegistrar =
+        existingRegistrar
+            .asBuilder()
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
+            .build();
+    persistResource(existingRegistrar);
+
+    // Update with the same certificate after enforcement starts
+    clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
+    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
+    args.put("failoverClientCertificate", CertificateSamples.SAMPLE_CERT);
+    Map<String, Object> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "op", "update",
+                "id", CLIENT_ID,
+                "args", args));
+
+    assertThat(response).containsEntry("status", "SUCCESS");
+    assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
+    assertNoTasksEnqueued("sheet");
   }
 
   @Test
