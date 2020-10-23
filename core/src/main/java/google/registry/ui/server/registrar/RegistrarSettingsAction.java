@@ -312,8 +312,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     Optional<String> certificateString =
         RegistrarFormFields.CLIENT_CERTIFICATE_FIELD.extractUntyped(args);
     if (certificateString.isPresent()) {
-      String existingCertificate = initialRegistrar.getClientCertificate();
-      if (validateCertificate(existingCertificate, certificateString.get())) {
+      if (validateCertificate(initialRegistrar.getClientCertificate(), certificateString.get())) {
         builder.setClientCertificate(certificateString.get(), tm().getTransactionTime());
       }
     }
@@ -321,8 +320,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     Optional<String> failoverCertificateString =
         RegistrarFormFields.FAILOVER_CLIENT_CERTIFICATE_FIELD.extractUntyped(args);
     if (failoverCertificateString.isPresent()) {
-      String existingCertificate = initialRegistrar.getFailoverClientCertificate();
-      if (validateCertificate(existingCertificate, failoverCertificateString.get())) {
+      if (validateCertificate(
+          initialRegistrar.getFailoverClientCertificate(), failoverCertificateString.get())) {
         builder.setFailoverClientCertificate(
             failoverCertificateString.get(), tm().getTransactionTime());
       }
@@ -336,7 +335,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * certificate is already the one stored for the registrar.
    */
   private boolean validateCertificate(String existingCertificate, String certificateString) {
-    if ((existingCertificate == null) || (!existingCertificate.equals(certificateString))) {
+    if ((existingCertificate == null) || !existingCertificate.equals(certificateString)) {
       // TODO(sarhabot): remove this check after November 1, 2020
       if (tm().getTransactionTime().isAfter(DateTime.parse("2020-11-01T00:00:00Z"))) {
         certificateChecker.validateCertificate(certificateString);
