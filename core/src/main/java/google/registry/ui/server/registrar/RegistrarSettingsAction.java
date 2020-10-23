@@ -308,36 +308,42 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         RegistrarFormFields.IP_ADDRESS_ALLOW_LIST_FIELD
             .extractUntyped(args)
             .orElse(ImmutableList.of()));
-    RegistrarFormFields.CLIENT_CERTIFICATE_FIELD
-        .extractUntyped(args)
-        .ifPresent(
-            certificateString -> {
-              String existingCertificate = initialRegistrar.getClientCertificate();
-              if ((existingCertificate == null)
-                  || (!existingCertificate.equals(certificateString))) {
-                // TODO(sarhabot): remove this check after November 1, 2020
-                if (tm().getTransactionTime().isAfter(DateTime.parse("2020-11-01T00:00:00Z"))) {
-                  certificateChecker.validateCertificate(certificateString);
-                }
-                builder.setClientCertificate(certificateString, tm().getTransactionTime());
-              }
-            });
-    RegistrarFormFields.FAILOVER_CLIENT_CERTIFICATE_FIELD
-        .extractUntyped(args)
-        .ifPresent(
-            certificateString -> {
-              String existingCertificate = initialRegistrar.getFailoverClientCertificate();
-              if ((existingCertificate == null)
-                  || (!existingCertificate.equals(certificateString))) {
-                // TODO(sarhabot): remove this check after November 1, 2020
-                if (tm().getTransactionTime().isAfter(DateTime.parse("2020-11-01T00:00:00Z"))) {
-                  certificateChecker.validateCertificate(certificateString);
-                }
-                builder.setFailoverClientCertificate(certificateString, tm().getTransactionTime());
-              }
-            });
+
+    Optional<String> certificateString =
+        RegistrarFormFields.CLIENT_CERTIFICATE_FIELD.extractUntyped(args);
+    if (certificateString.isPresent()) {
+      String existingCertificate = initialRegistrar.getClientCertificate();
+      if (validateCertificate(existingCertificate, certificateString.get())) {
+        builder.setClientCertificate(certificateString.get(), tm().getTransactionTime());
+      }
+    }
+
+    Optional<String> failoverCertificateString =
+        RegistrarFormFields.FAILOVER_CLIENT_CERTIFICATE_FIELD.extractUntyped(args);
+    if (failoverCertificateString.isPresent()) {
+      String existingCertificate = initialRegistrar.getFailoverClientCertificate();
+      if (validateCertificate(existingCertificate, failoverCertificateString.get())) {
+        builder.setFailoverClientCertificate(
+            failoverCertificateString.get(), tm().getTransactionTime());
+      }
+    }
 
     return checkNotChangedUnlessAllowed(builder, initialRegistrar, Role.OWNER);
+  }
+
+  /**
+   * Returns true if the registrar should accept the new certificate. Returns false if the
+   * certificate is already the one stored for the registrar.
+   */
+  private boolean validateCertificate(String existingCertificate, String certificateString) {
+    if ((existingCertificate == null) || (!existingCertificate.equals(certificateString))) {
+      // TODO(sarhabot): remove this check after November 1, 2020
+      if (tm().getTransactionTime().isAfter(DateTime.parse("2020-11-01T00:00:00Z"))) {
+        certificateChecker.validateCertificate(certificateString);
+      }
+      return true;
+    }
+    return false;
   }
 
   /**

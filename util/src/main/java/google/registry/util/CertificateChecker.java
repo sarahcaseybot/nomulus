@@ -79,7 +79,10 @@ public class CertificateChecker {
   public void validateCertificate(String certificateString) {
     ImmutableSet<CertificateViolation> violations = checkCertificate(certificateString);
     if (!violations.isEmpty()) {
-      String displayMessages = getAllDisplayMessages(violations);
+      String displayMessages =
+          violations.stream()
+              .map(violation -> getViolationDisplayMessage(violation))
+              .collect(Collectors.joining("\n"));
       throw new IllegalArgumentException(displayMessages);
     }
   }
@@ -138,13 +141,6 @@ public class CertificateChecker {
     }
 
     return checkCertificate(certificate);
-  }
-
-  /** Returns a string representation of all the violation display messages. */
-  public String getAllDisplayMessages(ImmutableSet<CertificateViolation> violations) {
-    return violations.stream()
-        .map(violation -> getViolationDisplayMessage(violation))
-        .collect(Collectors.joining("\n"));
   }
 
   /**
