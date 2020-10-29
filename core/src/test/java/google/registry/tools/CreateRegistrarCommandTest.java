@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
-import google.registry.flows.certificates.CertificateChecker;
+import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import java.io.IOException;
 import java.util.Optional;

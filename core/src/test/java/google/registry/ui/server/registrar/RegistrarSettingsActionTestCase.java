@@ -34,7 +34,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth;
-import google.registry.flows.certificates.CertificateChecker;
+import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.JsonActionRunner;

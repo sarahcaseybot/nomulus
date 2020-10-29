@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.flows.certificates;
+package google.registry.flows.certs;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.flows.certificates.CertificateChecker.CertificateViolation.ALGORITHM_CONSTRAINED;
-import static google.registry.flows.certificates.CertificateChecker.CertificateViolation.EXPIRED;
-import static google.registry.flows.certificates.CertificateChecker.CertificateViolation.NOT_YET_VALID;
-import static google.registry.flows.certificates.CertificateChecker.CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT;
-import static google.registry.flows.certificates.CertificateChecker.CertificateViolation.VALIDITY_LENGTH_TOO_LONG;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.ALGORITHM_CONSTRAINED;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.EXPIRED;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.NOT_YET_VALID;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.VALIDITY_LENGTH_TOO_LONG;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.truth.Truth;
 import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
 import java.security.KeyPairGenerator;
@@ -33,7 +33,6 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CertificateChecker} */
@@ -206,10 +205,10 @@ class CertificateCheckerTest {
   void test_checkCertificate_invalidCertificateString() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     IllegalArgumentException thrown =
-        Assertions.assertThrows(
+        assertThrows(
             IllegalArgumentException.class,
             () -> certificateChecker.checkCertificate("bad certificate string"));
-    Truth.assertThat(thrown).hasMessageThat().isEqualTo("Unable to read given certificate.");
+    assertThat(thrown).hasMessageThat().isEqualTo("Unable to read given certificate.");
   }
 
   @Test
