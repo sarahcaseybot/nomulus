@@ -141,8 +141,7 @@ public class EppTestCase {
   }
 
   protected void assertThatLoginSucceeds(String clientId, String password) throws Exception {
-    assertThatCommand("login.xml", ImmutableMap.of("CLID", clientId, "PW", password))
-        .hasSuccessfulLogin();
+    assertThatLogin(clientId, password).hasSuccessfulLogin();
   }
 
   protected void assertThatLogoutSucceeds() throws Exception {
