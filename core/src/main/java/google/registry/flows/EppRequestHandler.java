@@ -80,7 +80,7 @@ public class EppRequestHandler {
       if (eppOutput.isResponse()
           && eppOutput.getResponse().isLoginResponse()
           && eppOutput.isSuccess()) {
-        response.setHeader("logged-in", "true");
+        response.setHeader("Logged-In", "true");
       }
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("handleEppCommand general exception");
