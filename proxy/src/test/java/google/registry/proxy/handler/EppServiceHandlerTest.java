@@ -237,6 +237,28 @@ class EppServiceHandlerTest {
   }
 
   @Test
+  void testSuccess_sendCertificateOnlyBeforeLogin() throws Exception {
+    setHandshakeSuccess();
+    // First inbound message is hello.
+    channel.readInbound();
+    String content = "<epp>stuff</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
+    FullHttpRequest request = channel.readInbound();
+    assertThat(request).isEqualTo(makeEppHttpRequestWithCertificate(content));
+    // Receive response indicating session is logged in
+    HttpResponse response = makeEppHttpResponse(content, HttpResponseStatus.OK);
+    response.headers().set("Logged-In", "true");
+    // Send another inbound message after login
+    channel.writeOutbound(response);
+    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
+    request = channel.readInbound();
+    // Second request should not have full certificate
+    assertThat(request).isEqualTo(makeEppHttpRequest(content));
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
   void testSuccess_sendResponseToNextHandler() throws Exception {
     setHandshakeSuccess();
     String content = "<epp>stuff</epp>";
@@ -247,17 +269,6 @@ class EppServiceHandlerTest {
     assertThat((Object) channel.readOutbound()).isNull();
     assertThat(channel.isActive()).isTrue();
   }
-
-  // @Test
-  // void testSuccess_rememberLogin() throws Exception {
-  //   setHandshakeSuccess();
-  //   assertThat(eppServiceHandler.isLoggedIn).isFalse();
-  //   String content = "<epp>stuff</epp>";
-  //   HttpResponse response = makeEppHttpResponse(content, HttpResponseStatus.OK);
-  //   response.headers().set("Logged-In", "true");
-  //   channel.writeOutbound(response);
-  //   assertThat(eppServiceHandler.isLoggedIn).isTrue();
-  // }
 
   @Test
   void testSuccess_sendResponseToNextHandler_andDisconnect() throws Exception {

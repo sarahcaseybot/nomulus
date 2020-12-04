@@ -71,7 +71,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   private final byte[] helloBytes;
 
   private String sslClientCertificateHash;
-  X509Certificate sslClientCertificate;
+  private X509Certificate sslClientCertificate;
   private String clientAddress;
   private boolean isLoggedIn = false;
 
@@ -113,8 +113,8 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
             .addListener(
                 (Promise<X509Certificate> promise) -> {
                   if (promise.isSuccess()) {
-                    sslClientCertificateHash = getCertificateHash(promise.get());
                     sslClientCertificate = promise.get();
+                    sslClientCertificateHash = getCertificateHash(sslClientCertificate);
                     // Set the client cert hash key attribute for both this channel,
                     // used for collecting metrics on specific clients.
                     ctx.channel().attr(CLIENT_CERTIFICATE_HASH_KEY).set(sslClientCertificateHash);
@@ -151,7 +151,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
                 SSL_CLIENT_FULL_CERTIFICATE_FIELD,
                 Base64.getEncoder().encodeToString(sslClientCertificate.getEncoded()));
       } catch (CertificateEncodingException e) {
-        // e.printStackTrace();
+        throw new RuntimeException("Cannot encode client certificate.", e);
       }
     }
     return request;

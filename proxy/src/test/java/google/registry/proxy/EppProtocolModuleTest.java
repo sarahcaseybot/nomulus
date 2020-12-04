@@ -97,17 +97,6 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     return buffer;
   }
 
-  // private FullHttpRequest makeEppHttpRequest(byte[] content, Cookie... cookies) {
-  //   return TestUtils.makeEppHttpRequest(
-  //       new String(content, UTF_8),
-  //       PROXY_CONFIG.epp.relayHost,
-  //       PROXY_CONFIG.epp.relayPath,
-  //       TestModule.provideFakeAccessToken().get(),
-  //       getCertificateHash(certificate),
-  //       CLIENT_ADDRESS,
-  //       cookies);
-  // }
-
   private FullHttpRequest makeEppHttpRequestWithCertificate(byte[] content, Cookie... cookies)
       throws CertificateEncodingException {
     return TestUtils.makeEppHttpRequestWithCertificate(

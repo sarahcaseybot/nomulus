@@ -114,17 +114,9 @@ public class TestUtils {
       String clientAddress,
       Cookie... cookies)
       throws CertificateEncodingException {
-    FullHttpRequest request = makeHttpPostRequest(content, host, path);
-    request
-        .headers()
-        .set("authorization", "Bearer " + accessToken)
-        .set("content-type", "application/epp+xml")
-        .set("accept", "application/epp+xml")
-        .set("X-SSL-Certificate", sslClientCertificateHash)
-        .set("X-Forwarded-For", clientAddress);
-    if (cookies.length != 0) {
-      request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
-    }
+    FullHttpRequest request =
+        makeEppHttpRequest(
+            content, host, path, accessToken, sslClientCertificateHash, clientAddress, cookies);
     request
         .headers()
         .set(
