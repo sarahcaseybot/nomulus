@@ -36,6 +36,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,12 +97,25 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     return buffer;
   }
 
-  private FullHttpRequest makeEppHttpRequest(byte[] content, Cookie... cookies) {
-    return TestUtils.makeEppHttpRequest(
+  // private FullHttpRequest makeEppHttpRequest(byte[] content, Cookie... cookies) {
+  //   return TestUtils.makeEppHttpRequest(
+  //       new String(content, UTF_8),
+  //       PROXY_CONFIG.epp.relayHost,
+  //       PROXY_CONFIG.epp.relayPath,
+  //       TestModule.provideFakeAccessToken().get(),
+  //       getCertificateHash(certificate),
+  //       CLIENT_ADDRESS,
+  //       cookies);
+  // }
+
+  private FullHttpRequest makeEppHttpRequestWithCertificate(byte[] content, Cookie... cookies)
+      throws CertificateEncodingException {
+    return TestUtils.makeEppHttpRequestWithCertificate(
         new String(content, UTF_8),
         PROXY_CONFIG.epp.relayHost,
         PROXY_CONFIG.epp.relayPath,
         TestModule.provideFakeAccessToken().get(),
+        certificate,
         getCertificateHash(certificate),
         CLIENT_ADDRESS,
         cookies);
@@ -134,13 +148,15 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   @Test
   void testSuccess_singleFrameInboundMessage() throws Exception {
     // First inbound message is hello.
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(HELLO_BYTES));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(HELLO_BYTES));
 
     byte[] inputBytes = readResourceBytes(getClass(), "login.xml").read();
 
     // Verify inbound message is as expected.
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes))).isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes));
 
     // Nothing more to read.
     assertThat((Object) channel.readInbound()).isNull();
@@ -161,8 +177,10 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
                 Unpooled.wrappedBuffer(
                     getByteBufFromContent(inputBytes1), getByteBufFromContent(inputBytes2))))
         .isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes1));
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes2));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes1));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes2));
 
     // Nothing more to read.
     assertThat((Object) channel.readInbound()).isNull();
@@ -186,11 +204,13 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
 
     // The second frame contains the first message, and part of the second message.
     assertThat(channel.writeInbound(inputBuffer.readBytes(inputBytes2.length))).isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes1));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes1));
 
     // The third frame contains the rest of the second message.
     assertThat(channel.writeInbound(inputBuffer)).isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes2));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes2));
 
     // Nothing more to read.
     assertThat((Object) channel.readInbound()).isNull();
@@ -252,7 +272,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     byte[] inputBytes1 = readResourceBytes(getClass(), "logout.xml").read();
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes1))).isTrue();
     assertThat((FullHttpRequest) channel.readInbound())
-        .isEqualTo(makeEppHttpRequest(inputBytes1, cookie1, cookie2));
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes1, cookie1, cookie2));
 
     // Second outbound message change cookies.
     byte[] outputBytes2 = readResourceBytes(getClass(), "logout_response.xml").read();
@@ -267,7 +287,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     byte[] inputBytes2 = readResourceBytes(getClass(), "login.xml").read();
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes2))).isTrue();
     assertThat((FullHttpRequest) channel.readInbound())
-        .isEqualTo(makeEppHttpRequest(inputBytes2, cookie1, cookie2, cookie3));
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes2, cookie1, cookie2, cookie3));
 
     // Nothing more to write or read.
     assertThat((Object) channel.readOutbound()).isNull();

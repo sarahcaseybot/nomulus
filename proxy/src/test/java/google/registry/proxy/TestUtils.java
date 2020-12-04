@@ -32,6 +32,9 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
 
 /** Utility class for various helper methods used in testing. */
 public class TestUtils {
@@ -98,6 +101,34 @@ public class TestUtils {
     if (cookies.length != 0) {
       request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
     }
+    return request;
+  }
+
+  public static FullHttpRequest makeEppHttpRequestWithCertificate(
+      String content,
+      String host,
+      String path,
+      String accessToken,
+      X509Certificate certificate,
+      String sslClientCertificateHash,
+      String clientAddress,
+      Cookie... cookies)
+      throws CertificateEncodingException {
+    FullHttpRequest request = makeHttpPostRequest(content, host, path);
+    request
+        .headers()
+        .set("authorization", "Bearer " + accessToken)
+        .set("content-type", "application/epp+xml")
+        .set("accept", "application/epp+xml")
+        .set("X-SSL-Certificate", sslClientCertificateHash)
+        .set("X-Forwarded-For", clientAddress);
+    if (cookies.length != 0) {
+      request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
+    }
+    request
+        .headers()
+        .set(
+            "X-SSL-Full-Certificate", Base64.getEncoder().encodeToString(certificate.getEncoded()));
     return request;
   }
 
