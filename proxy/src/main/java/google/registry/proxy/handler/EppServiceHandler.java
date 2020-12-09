@@ -151,7 +151,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
                 SSL_CLIENT_FULL_CERTIFICATE_FIELD,
                 Base64.getEncoder().encodeToString(sslClientCertificate.getEncoded()));
       } catch (CertificateEncodingException e) {
-        throw new RuntimeException("Cannot encode client certificate.", e);
+        throw new RuntimeException("Cannot encode client certificate", e);
       }
     }
     return request;

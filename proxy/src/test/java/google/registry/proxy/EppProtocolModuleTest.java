@@ -16,6 +16,7 @@ package google.registry.proxy;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
+import static google.registry.proxy.TestUtils.SAMPLE_CERT;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.ResourceUtils.readResourceBytes;
 import static google.registry.util.X509Utils.getCertificateHash;
@@ -25,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.testing.FakeClock;
-import google.registry.util.SelfSignedCaCertificate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -36,7 +36,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
-import java.security.cert.CertificateEncodingException;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,14 +98,12 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     return buffer;
   }
 
-  private FullHttpRequest makeEppHttpRequestWithCertificate(byte[] content, Cookie... cookies)
-      throws CertificateEncodingException {
+  private FullHttpRequest makeEppHttpRequestWithCertificate(byte[] content, Cookie... cookies) {
     return TestUtils.makeEppHttpRequestWithCertificate(
         new String(content, UTF_8),
         PROXY_CONFIG.epp.relayHost,
         PROXY_CONFIG.epp.relayPath,
         TestModule.provideFakeAccessToken().get(),
-        certificate,
         getCertificateHash(certificate),
         CLIENT_ADDRESS,
         cookies);
@@ -123,7 +122,10 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   @Override
   void beforeEach() throws Exception {
     testComponent = makeTestComponent(new FakeClock());
-    certificate = SelfSignedCaCertificate.create().cert();
+    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    certificate =
+        (X509Certificate)
+            cf.generateCertificate(new ByteArrayInputStream(SAMPLE_CERT.getBytes(UTF_8)));
     initializeChannel(
         ch -> {
           ch.attr(REMOTE_ADDRESS_KEY).set(CLIENT_ADDRESS);
