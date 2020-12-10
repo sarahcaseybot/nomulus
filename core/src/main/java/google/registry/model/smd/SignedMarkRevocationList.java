@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.isEmpty;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
+import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -32,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
-import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EmbedMap;
 import com.googlecode.objectify.annotation.Entity;
@@ -40,7 +40,6 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
@@ -83,8 +82,6 @@ import org.joda.time.DateTime;
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 public class SignedMarkRevocationList extends ImmutableObject implements NonReplicatedEntity {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
   @VisibleForTesting static final int SHARD_SIZE = 10000;
 
   /** Common ancestor for queries. */
@@ -122,7 +119,7 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
       memoizeWithShortExpiration(
           () -> {
             SignedMarkRevocationList datastoreList = loadFromDatastore();
-            supressExceptionUnlessInTest(
+            suppressExceptionUnlessInTest(
                 () -> {
                   loadAndCompareCloudSqlList(datastoreList);
                 },
@@ -259,17 +256,6 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
   void disallowUnshardedSaves() {
     if (!isShard) {
       throw new UnshardedSaveException();
-    }
-  }
-
-  static void supressExceptionUnlessInTest(Runnable work, String message) {
-    try {
-      work.run();
-    } catch (Exception e) {
-      if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
-        throw e;
-      }
-      logger.atWarning().withCause(e).log(message);
     }
   }
 
