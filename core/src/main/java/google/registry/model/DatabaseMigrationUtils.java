@@ -22,7 +22,7 @@ public class DatabaseMigrationUtils {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** Exceptions are only thrown in unit tests. Otherwise exceptions are logged, but not thrown. */
+  /** Throws exceptions only in unit tests, otherwise only logs exceptions. */
   public static void suppressExceptionUnlessInTest(Runnable work, String message) {
     try {
       work.run();
@@ -33,4 +33,6 @@ public class DatabaseMigrationUtils {
       logger.atWarning().withCause(e).log(message);
     }
   }
+
+  private DatabaseMigrationUtils() {}
 }
