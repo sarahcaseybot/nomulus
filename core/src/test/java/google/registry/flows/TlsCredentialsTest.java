@@ -51,7 +51,9 @@ final class TlsCredentialsTest {
 
   @Test
   void testClientCertificateHash_missing() {
-    TlsCredentials tls = new TlsCredentials(true, Optional.empty(), Optional.of("192.168.1.1"));
+    TlsCredentials tls =
+        new TlsCredentials(
+            true, Optional.empty(), Optional.of(SAMPLE_CERT), Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -64,7 +66,8 @@ final class TlsCredentialsTest {
 
   @Test
   void test_missingIpAddress_doesntAllowAccess() {
-    TlsCredentials tls = new TlsCredentials(false, Optional.of("certHash"), Optional.empty());
+    TlsCredentials tls =
+        new TlsCredentials(false, Optional.of("certHash"), Optional.empty(), Optional.empty());
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -79,7 +82,8 @@ final class TlsCredentialsTest {
   @Test
   void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
     TlsCredentials tls =
-        new TlsCredentials(false, Optional.of("certHash"), Optional.of("192.168.1.1"));
+        new TlsCredentials(
+            false, Optional.of("certHash"), Optional.of("cert"), Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
