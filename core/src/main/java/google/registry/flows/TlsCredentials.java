@@ -121,11 +121,12 @@ public class TlsCredentials implements TransportCredentials {
   /**
    * Verifies client SSL certificate is permitted to issue commands as {@code registrar}.
    *
-   * @throws MissingRegistrarCertificateException if frontend didn't send certificate hash header
+   * @throws MissingRegistrarCertificateException if frontend didn't send certificate header
    * @throws BadRegistrarCertificateException if registrar requires certificate and it didn't match
    */
   @VisibleForTesting
   void validateCertificate(Registrar registrar) throws AuthenticationErrorException {
+    // Check that certificate is present in registrar object
     if (!registrar.getClientCertificate().isPresent()
         && !registrar.getFailoverClientCertificate().isPresent()) {
       if (requireSslCertificates) {
@@ -138,17 +139,21 @@ public class TlsCredentials implements TransportCredentials {
     }
 
     if (!clientCertificate.isPresent()) {
+      // TODO(sarahbot): throw a MissingRegistrarCertificateException once hash is no longer used as
+      // failover
       logger.atInfo().log("Request did not include X-SSL-Full-Certificate");
-      throw new MissingRegistrarCertificateException();
+    } else {
+      // Check if the certificate is equal to the one on file for the registrar.
+      if (!clientCertificate.equals(registrar.getClientCertificate())
+          && !clientCertificate.equals(registrar.getFailoverClientCertificate())) {
+        // TODO(sarahbot): throw a BadRegistrarCertificateException once hash is no longer used as
+        // failover
+        logger.atWarning().log("bad certificate for %s.", registrar.getClientId());
+      }
     }
 
-    // Check if the certificate is equal to the one on file for the registrar.
-    if (!clientCertificate.equals(registrar.getClientCertificate())
-        && !clientCertificate.equals(registrar.getFailoverClientCertificate())) {
-      logger.atWarning().log("bad certificate for %s.", registrar.getClientId());
-      throw new BadRegistrarCertificateException();
-    }
-
+    // Check the certificate hash as a failover
+    // TODO(sarahbot): Remove hash checks once certificate checks are working.
     if (!registrar.getClientCertificateHash().isPresent()
         && !registrar.getFailoverClientCertificateHash().isPresent()) {
       if (requireSslCertificates) {
