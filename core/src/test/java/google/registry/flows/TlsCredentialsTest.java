@@ -51,10 +51,9 @@ final class TlsCredentialsTest {
   }
 
   @Test
-  void testClientCertificateHash_missing() {
+  void testClientCertificateAndHash_missing() {
     TlsCredentials tls =
-        new TlsCredentials(
-            true, Optional.empty(), Optional.of(SAMPLE_CERT), Optional.of("192.168.1.1"));
+        new TlsCredentials(true, Optional.empty(), Optional.empty(), Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -91,7 +90,8 @@ final class TlsCredentialsTest {
             .setClientCertificate(null, DateTime.now(UTC))
             .setFailoverClientCertificate(null, DateTime.now(UTC))
             .build());
-    // This would throw a RegistrarCertificateNotConfiguredException if cert hashes wren't bypassed.
+    // This would throw a RegistrarCertificateNotConfiguredException if cert hashes were not
+    // bypassed
     tls.validateCertificate(Registrar.loadByClientId("TheRegistrar").get());
   }
 
