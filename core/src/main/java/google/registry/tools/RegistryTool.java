@@ -117,6 +117,7 @@ public final class RegistryTool {
           .put("unrenew_domain", UnrenewDomainCommand.class)
           .put("update_allocation_tokens", UpdateAllocationTokensCommand.class)
           .put("update_cursors", UpdateCursorsCommand.class)
+          .put("update_database_transition_schedule", UpdateDatabaseTransitionScheduleCommand.class)
           .put("update_domain", UpdateDomainCommand.class)
           .put("update_kms_keyring", UpdateKmsKeyringCommand.class)
           .put("update_premium_list", UpdatePremiumListCommand.class)

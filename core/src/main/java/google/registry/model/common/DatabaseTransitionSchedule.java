@@ -14,11 +14,9 @@
 
 package google.registry.model.common;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Ordering;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Mapify;
@@ -71,10 +69,6 @@ public class DatabaseTransitionSchedule extends CrossTldSingleton implements Dat
     public Builder setDatabaseTransitions(
         ImmutableSortedMap<DateTime, PrimaryDatabase> databaseTransitionsMap) {
       checkNotNull(databaseTransitionsMap, "Database Transitions map cannot be null");
-
-      checkArgument(
-          Ordering.natural().isStrictlyOrdered(databaseTransitionsMap.values()),
-          "The database transitions are chronologically out of order");
 
       getInstance().databaseTransitions =
           TimedTransitionProperty.fromValueMap(
