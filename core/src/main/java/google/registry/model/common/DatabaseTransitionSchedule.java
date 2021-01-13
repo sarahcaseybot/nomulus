@@ -31,11 +31,19 @@ import org.joda.time.DateTime;
 @Immutable
 public class DatabaseTransitionSchedule extends CrossTldSingleton implements DatastoreOnlyEntity {
 
+  /**
+   * The name of the database to be treated as the primary database. The first entry in the schedule
+   * will always be Datastore.
+   */
   public enum PrimaryDatabase {
     DATASTORE,
     CLOUD_SQL
   }
 
+  /**
+   * The transition to a specified primary database at a specific point in time, for use in a
+   * TimedTransitionProperty.
+   */
   @Embed
   public static class PrimaryDatabaseTransition extends TimedTransition<PrimaryDatabase> {
     private PrimaryDatabase primaryDatabase;
@@ -51,10 +59,12 @@ public class DatabaseTransitionSchedule extends CrossTldSingleton implements Dat
     }
   }
 
+  /** A property that tracks the primary database for a dual-read/dual-write database migration. */
   @Mapify(TimeMapper.class)
   TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions =
       TimedTransitionProperty.forMapify(PrimaryDatabase.DATASTORE, PrimaryDatabaseTransition.class);
 
+  /** Returns the database that is indicated as primary at the given time. */
   public PrimaryDatabase getPrimaryDatabase(DateTime now) {
     return databaseTransitions.getValueAtTime(now);
   }

@@ -45,21 +45,23 @@ public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
   private PrimaryDatabase primaryDatabase;
 
   @Override
-  protected void init() throws Exception {
-    // Add check arguments
-
+  protected void init() {
     VKey<DatabaseTransitionSchedule> key =
         VKey.create(
             DatabaseTransitionSchedule.class,
             SINGLETON_ID,
             Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, SINGLETON_ID));
 
+    // Retrieve the existing schedule
     Optional<DatabaseTransitionSchedule> currentSchedule =
         ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
 
     boolean scheduleWasNull = false;
+
+    // All schedules must have a value at start of time, so if there was no previous existing
+    // schedule, add an entry to the schedule indicating Datastore from start of time.
     ImmutableSortedMap<DateTime, PrimaryDatabase> databaseTransitions;
-    if (currentSchedule.isEmpty()) {
+    if (!currentSchedule.isPresent()) {
       scheduleWasNull = true;
       currentSchedule =
           Optional.of(
@@ -70,6 +72,7 @@ public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
     }
     databaseTransitions = currentSchedule.get().getDatabaseTransitions();
 
+    // Adds the new transition to the previous transition schedule
     ImmutableSortedMap.Builder<DateTime, PrimaryDatabase> newDatabaseTransitions =
         new ImmutableSortedMap.Builder<>(Ordering.natural());
     newDatabaseTransitions.putAll(databaseTransitions);
