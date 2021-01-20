@@ -26,6 +26,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException.AuthenticationErrorException;
+import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
@@ -72,6 +73,8 @@ public class TlsCredentials implements TransportCredentials {
     this.clientCertificate = clientCertificate;
     this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
   }
+
+  @Inject public CertificateChecker certificateChecker;
 
   static InetAddress parseInetAddress(String asciiAddr) {
     try {
@@ -146,6 +149,20 @@ public class TlsCredentials implements TransportCredentials {
       // Check if the certificate is equal to the one on file for the registrar.
       if (clientCertificate.equals(registrar.getClientCertificate())
           || clientCertificate.equals(registrar.getFailoverClientCertificate())) {
+        // Check certificate for any requirement violations
+        // TODO(Sarahbot@): Throw exceptions instead of just logging once requirement enforcement
+        // begins
+        try {
+          certificateChecker.validateCertificate(clientCertificate.get());
+        } catch (Exception e) {
+          if (e instanceof IllegalArgumentException) {
+            logger.atWarning().log(
+                "Registrar certificate used for %s does not meet certificate requirements: %s",
+                registrar.getClientId(), e.getMessage());
+          } else {
+            logger.atWarning().log("Error validating certificate for %s", registrar.getClientId());
+          }
+        }
         // successfully validated, return here since hash validation is not necessary
         return;
       }

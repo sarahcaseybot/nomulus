@@ -15,14 +15,18 @@
 package google.registry.flows.session;
 
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.net.InetAddresses;
 import google.registry.flows.TlsCredentials;
 import google.registry.flows.TlsCredentials.BadRegistrarCertificateException;
 import google.registry.flows.TlsCredentials.BadRegistrarIpAddressException;
 import google.registry.flows.TlsCredentials.MissingRegistrarCertificateException;
+import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
@@ -33,9 +37,9 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link LoginFlow} when accessed via a TLS transport. */
 public class LoginFlowViaTlsTest extends LoginFlowTestCase {
 
-  private static final Optional<String> GOOD_CERT = Optional.of(CertificateSamples.SAMPLE_CERT);
+  private static final Optional<String> GOOD_CERT = Optional.of(CertificateSamples.SAMPLE_CERT3);
   private static final Optional<String> GOOD_CERT_HASH =
-      Optional.of(CertificateSamples.SAMPLE_CERT_HASH);
+      Optional.of(CertificateSamples.SAMPLE_CERT3_HASH);
   private static final Optional<String> BAD_CERT = Optional.of(CertificateSamples.SAMPLE_CERT2);
   private static final Optional<String> BAD_CERT_HASH =
       Optional.of(CertificateSamples.SAMPLE_CERT2_HASH);
@@ -43,11 +47,18 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   private static final Optional<String> BAD_IP = Optional.of("1.1.1.1");
   private static final Optional<String> GOOD_IPV6 = Optional.of("2001:db8::1");
   private static final Optional<String> BAD_IPV6 = Optional.of("2001:db8::2");
+  CertificateChecker certificateChecker =
+      new CertificateChecker(
+          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          30,
+          2048,
+          ImmutableSet.of("secp256r1", "secp384r1"),
+          clock);
 
   @Override
   protected Registrar.Builder getRegistrarBuilder() {
     return super.getRegistrarBuilder()
-        .setClientCertificate(CertificateSamples.SAMPLE_CERT, DateTime.now(UTC))
+        .setClientCertificate(GOOD_CERT.get(), DateTime.now(UTC))
         .setIpAddressAllowList(
             ImmutableList.of(CidrAddressBlock.create(InetAddresses.forString(GOOD_IP.get()), 32)));
   }
@@ -55,7 +66,9 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   @Test
   void testSuccess_withGoodCredentials() throws Exception {
     persistResource(getRegistrarBuilder().build());
-    credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IP);
+    TlsCredentials tlsCredentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IP);
+    tlsCredentials.certificateChecker = certificateChecker;
+    credentials = tlsCredentials;
     doSuccessfulTest("login_valid.xml");
   }
 
@@ -66,7 +79,9 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
             .setIpAddressAllowList(
                 ImmutableList.of(CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
             .build());
-    credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IPV6);
+    TlsCredentials tlsCredentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IPV6);
+    tlsCredentials.certificateChecker = certificateChecker;
+    credentials = tlsCredentials;
     doSuccessfulTest("login_valid.xml");
   }
 
@@ -77,7 +92,9 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
             .setIpAddressAllowList(
                 ImmutableList.of(CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
             .build());
-    credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IPV6);
+    TlsCredentials tlsCredentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IPV6);
+    tlsCredentials.certificateChecker = certificateChecker;
+    credentials = tlsCredentials;
     doSuccessfulTest("login_valid.xml");
   }
 
@@ -87,7 +104,9 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
         getRegistrarBuilder()
             .setIpAddressAllowList(ImmutableList.of(CidrAddressBlock.create("192.168.1.255/24")))
             .build());
-    credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IP);
+    TlsCredentials tlsCredentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IP);
+    tlsCredentials.certificateChecker = certificateChecker;
+    credentials = tlsCredentials;
     doSuccessfulTest("login_valid.xml");
   }
 
