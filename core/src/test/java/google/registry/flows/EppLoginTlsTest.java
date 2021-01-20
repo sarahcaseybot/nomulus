@@ -188,8 +188,7 @@ class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  // TODO(sarahbot): This should fail once new requirements are enforced
-  void testCertificateDoesNotMeetRequirements_succeeds() throws Exception {
+  void testCertificateDoesNotMeetRequirements_fails() throws Exception {
     // SAMPLE_CERT has a validity period that is too long
     setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     persistResource(
@@ -198,6 +197,14 @@ class EppLoginTlsTest extends EppTestCase {
             .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
             .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
             .build());
-    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    assertThatLogin("NewRegistrar", "foo-BAR2")
+        .hasResponse(
+            "response_error.xml",
+            ImmutableMap.of(
+                "CODE",
+                "2200",
+                "MSG",
+                "Certificate validity period is too long; it must be less than or equal to 398"
+                    + " days."));
   }
 }

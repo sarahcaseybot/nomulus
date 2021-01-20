@@ -25,6 +25,7 @@ import com.google.common.net.InetAddresses;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
@@ -155,6 +156,11 @@ public class TlsCredentials implements TransportCredentials {
         try {
           certificateChecker.validateCertificate(clientCertificate.get());
         } catch (Exception e) {
+          // throw exception in unit tests and Sandbox
+          if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
+              || RegistryEnvironment.get().equals(RegistryEnvironment.SANDBOX)) {
+            throw new CertificateContainsSecurityViolationsException(e.getMessage());
+          }
           if (e instanceof IllegalArgumentException) {
             logger.atWarning().log(
                 "Registrar certificate used for %s does not meet certificate requirements: %s",
@@ -225,6 +231,14 @@ public class TlsCredentials implements TransportCredentials {
   public static class BadRegistrarCertificateException extends AuthenticationErrorException {
     BadRegistrarCertificateException() {
       super("Registrar certificate does not match stored certificate");
+    }
+  }
+
+  /** Registrar certificate contains security violations. */
+  public static class CertificateContainsSecurityViolationsException
+      extends AuthenticationErrorException {
+    CertificateContainsSecurityViolationsException(String message) {
+      super(message);
     }
   }
 
