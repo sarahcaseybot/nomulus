@@ -235,13 +235,16 @@ public class TlsCredentials implements TransportCredentials {
     }
   }
 
-  /** Registrar certificate contains security violations. */
+  /** Registrar certificate contains the following security violations: ... */
   public static class CertificateContainsSecurityViolationsException
       extends AuthenticationErrorException {
     InsecureCertificateException exception;
 
     CertificateContainsSecurityViolationsException(InsecureCertificateException exception) {
-      super(exception.getMessage());
+      super(
+          String.format(
+              "Registrar certificate contains the following security violations:\n%s",
+              exception.getMessage()));
       this.exception = exception;
     }
   }

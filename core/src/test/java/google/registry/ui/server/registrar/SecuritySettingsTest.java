@@ -87,10 +87,8 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
     assertThat(response)
         .containsEntry(
             "message",
-            "google.registry.flows.certs.CertificateChecker$InsecureCertificateException:"
-                + " Certificate is expired.\n"
-                + "Certificate validity period is too long; it must be less than or equal to 398"
-                + " days.");
+            "Certificate is expired.\nCertificate validity period is too long; it must be less"
+                + " than or equal to 398 days.");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
   }
 
@@ -109,10 +107,8 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
     assertThat(response)
         .containsEntry(
             "message",
-            "google.registry.flows.certs.CertificateChecker$InsecureCertificateException:"
-                + " Certificate is expired.\n"
-                + "Certificate validity period is too long; it must be less than or equal to 398"
-                + " days.");
+            "Certificate is expired.\nCertificate validity period is too long; it must be less"
+                + " than or equal to 398 days.");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: IllegalArgumentException");
   }
 

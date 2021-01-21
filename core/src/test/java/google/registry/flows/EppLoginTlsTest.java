@@ -25,11 +25,17 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
+import google.registry.util.SelfSignedCaCertificate;
+import java.io.StringWriter;
+import java.security.cert.X509Certificate;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.shaded.org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemObjectGenerator;
+import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
 
 /** Test logging in with TLS credentials. */
 class EppLoginTlsTest extends EppTestCase {
@@ -203,7 +209,43 @@ class EppLoginTlsTest extends EppTestCase {
                 "CODE",
                 "2200",
                 "MSG",
-                "Certificate validity period is too long; it must be less than or equal to 398"
-                    + " days."));
+                "Registrar certificate contains the following security violations:\n"
+                    + "Certificate validity period is too long; it must be less than or equal to"
+                    + " 398 days."));
+  }
+
+  @Test
+  void testCertificateDoesNotMeetMultipleRequirements_fails() throws Exception {
+
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                "test", clock.nowUtc().plusDays(100), clock.nowUtc().plusDays(5000))
+            .cert();
+
+    StringWriter sw = new StringWriter();
+    try (PemWriter pw = new PemWriter(sw)) {
+      PemObjectGenerator generator = new JcaMiscPEMGenerator(certificate);
+      pw.writeObject(generator);
+    }
+
+    // SAMPLE_CERT has a validity period that is too long
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, sw.toString());
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(sw.toString(), clock.nowUtc())
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
+            .build());
+    assertThatLogin("NewRegistrar", "foo-BAR2")
+        .hasResponse(
+            "response_error.xml",
+            ImmutableMap.of(
+                "CODE",
+                "2200",
+                "MSG",
+                "Registrar certificate contains the following security violations:\n"
+                    + "Certificate is expired.\n"
+                    + "Certificate validity period is too long; it must be less than or equal to"
+                    + " 398 days."));
   }
 }

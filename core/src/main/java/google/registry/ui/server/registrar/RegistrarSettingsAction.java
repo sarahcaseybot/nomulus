@@ -341,7 +341,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       try {
         certificateChecker.validateCertificate(certificateString);
       } catch (InsecureCertificateException e) {
-        throw new IllegalArgumentException(e);
+        throw new IllegalArgumentException(e.getMessage());
       }
       return true;
     }
