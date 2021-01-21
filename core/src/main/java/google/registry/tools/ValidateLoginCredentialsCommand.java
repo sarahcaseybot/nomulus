@@ -85,14 +85,13 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     Registrar registrar =
         checkArgumentPresent(
             Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
-    TlsCredentials credentials =
-        new TlsCredentials(
+    new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),
             Optional.ofNullable(clientCertificate),
-            Optional.ofNullable(clientIpAddress));
-    credentials.certificateChecker = certificateChecker;
-    credentials.validate(registrar, password);
+            Optional.ofNullable(clientIpAddress),
+            certificateChecker)
+        .validate(registrar, password);
     checkState(
         registrar.isLive(), "Registrar %s has non-live state: %s", clientId, registrar.getState());
   }

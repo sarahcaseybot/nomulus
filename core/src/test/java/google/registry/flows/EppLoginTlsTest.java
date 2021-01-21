@@ -38,23 +38,22 @@ class EppLoginTlsTest extends EppTestCase {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  TlsCredentials tlsCredentials;
+  private final CertificateChecker certificateChecker =
+      new CertificateChecker(
+          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          30,
+          2048,
+          ImmutableSet.of("secp256r1", "secp384r1"),
+          clock);
 
   void setCredentials(String clientCertificateHash, String clientCertificate) {
-    tlsCredentials =
+    setTransportCredentials(
         new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),
             Optional.ofNullable(clientCertificate),
-            Optional.of("192.168.1.100:54321"));
-    tlsCredentials.certificateChecker =
-        new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
-            30,
-            2048,
-            ImmutableSet.of("secp256r1", "secp384r1"),
-            clock);
-    setTransportCredentials(tlsCredentials);
+            Optional.of("192.168.1.100:54321"),
+            certificateChecker));
   }
 
   @BeforeEach

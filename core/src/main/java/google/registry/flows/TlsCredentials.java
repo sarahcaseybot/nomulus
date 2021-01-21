@@ -28,6 +28,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
@@ -62,20 +63,21 @@ public class TlsCredentials implements TransportCredentials {
   private final Optional<String> clientCertificateHash;
   private final Optional<String> clientCertificate;
   private final Optional<InetAddress> clientInetAddr;
+  private final CertificateChecker certificateChecker;
 
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
       @Header("X-SSL-Certificate") Optional<String> clientCertificateHash,
       @Header("X-SSL-Full-Certificate") Optional<String> clientCertificate,
-      @Header("X-Forwarded-For") Optional<String> clientAddress) {
+      @Header("X-Forwarded-For") Optional<String> clientAddress,
+      CertificateChecker certificateChecker) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
     this.clientCertificate = clientCertificate;
     this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
+    this.certificateChecker = certificateChecker;
   }
-
-  @Inject public CertificateChecker certificateChecker;
 
   static InetAddress parseInetAddress(String asciiAddr) {
     try {
@@ -155,19 +157,18 @@ public class TlsCredentials implements TransportCredentials {
         // begins
         try {
           certificateChecker.validateCertificate(clientCertificate.get());
-        } catch (Exception e) {
+        } catch (InsecureCertificateException e) {
           // throw exception in unit tests and Sandbox
           if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
               || RegistryEnvironment.get().equals(RegistryEnvironment.SANDBOX)) {
-            throw new CertificateContainsSecurityViolationsException(e.getMessage());
+            throw new CertificateContainsSecurityViolationsException(e);
           }
-          if (e instanceof IllegalArgumentException) {
-            logger.atWarning().log(
-                "Registrar certificate used for %s does not meet certificate requirements: %s",
-                registrar.getClientId(), e.getMessage());
-          } else {
-            logger.atWarning().log("Error validating certificate for %s", registrar.getClientId());
-          }
+          logger.atWarning().log(
+              "Registrar certificate used for %s does not meet certificate requirements: %s",
+              registrar.getClientId(), e.getMessage());
+        } catch (Exception e) {
+          logger.atWarning().log(
+              "Error validating certificate for %s: %s", registrar.getClientId(), e);
         }
         // successfully validated, return here since hash validation is not necessary
         return;
@@ -237,8 +238,11 @@ public class TlsCredentials implements TransportCredentials {
   /** Registrar certificate contains security violations. */
   public static class CertificateContainsSecurityViolationsException
       extends AuthenticationErrorException {
-    CertificateContainsSecurityViolationsException(String message) {
-      super(message);
+    InsecureCertificateException exception;
+
+    CertificateContainsSecurityViolationsException(InsecureCertificateException exception) {
+      super(exception.getMessage());
+      this.exception = exception;
     }
   }
 
