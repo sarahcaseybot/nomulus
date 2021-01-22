@@ -14,19 +14,19 @@
 
 package google.registry.tools;
 
-import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
+import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
+import google.registry.model.common.TimedTransitionProperty;
 import google.registry.persistence.VKey;
+import google.registry.tools.params.TransitionListParameter.PrimaryDatabaseTransitions;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
@@ -36,50 +36,36 @@ import org.joda.time.DateTime;
     commandDescription = "Add a new entry to the database transition schedule.")
 public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
 
-  @Parameter(names = "--start_time", description = "Datetime for database to become primary.")
-  DateTime start;
-
   @Parameter(
-      names = "--database",
-      description = "Database to become primary (DATASTORE or CLOUD_SQL)")
-  private PrimaryDatabase primaryDatabase;
+      names = "--transition_schedule",
+      converter = PrimaryDatabaseTransitions.class,
+      validateWith = PrimaryDatabaseTransitions.class,
+      description =
+          "Comma-delimited list of database transitions, of the form"
+              + " <time>=<primary-database>[,<time>=<primary-database>]*")
+  ImmutableSortedMap<DateTime, PrimaryDatabase> transitionSchedule;
+
+  @Parameter(names = "--schedule_id", description = "ID string for the schedule being updated")
+  private String scheduleId;
 
   @Override
   protected void init() {
     VKey<DatabaseTransitionSchedule> key =
         VKey.create(
             DatabaseTransitionSchedule.class,
-            SINGLETON_ID,
-            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, SINGLETON_ID));
+            scheduleId,
+            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, scheduleId));
 
     // Retrieve the existing schedule
     Optional<DatabaseTransitionSchedule> currentSchedule =
         ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
 
-    boolean scheduleWasNull = false;
+    DatabaseTransitionSchedule newSchedule =
+        DatabaseTransitionSchedule.create(
+            scheduleId,
+            TimedTransitionProperty.fromValueMap(
+                transitionSchedule, PrimaryDatabaseTransition.class));
 
-    // All schedules must have a value at start of time, so if there was no previous existing
-    // schedule, add an entry to the schedule indicating Datastore from start of time.
-    ImmutableSortedMap<DateTime, PrimaryDatabase> databaseTransitions;
-    if (!currentSchedule.isPresent()) {
-      scheduleWasNull = true;
-      currentSchedule =
-          Optional.of(
-              new DatabaseTransitionSchedule.Builder()
-                  .setDatabaseTransitions(
-                      ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE))
-                  .build());
-    }
-    databaseTransitions = currentSchedule.get().getDatabaseTransitions();
-
-    // Adds the new transition to the previous transition schedule
-    ImmutableSortedMap.Builder<DateTime, PrimaryDatabase> newDatabaseTransitions =
-        new ImmutableSortedMap.Builder<>(Ordering.natural());
-    newDatabaseTransitions.putAll(databaseTransitions);
-    newDatabaseTransitions.put(start, primaryDatabase);
-
-    DatabaseTransitionSchedule.Builder newSchedule = new DatabaseTransitionSchedule.Builder();
-    newSchedule.setDatabaseTransitions(newDatabaseTransitions.build());
-    stageEntityChange(scheduleWasNull ? null : currentSchedule.get(), newSchedule.build());
+    stageEntityChange(currentSchedule.orElse(null), newSchedule);
   }
 }

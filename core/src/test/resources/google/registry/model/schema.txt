@@ -79,7 +79,7 @@ class google.registry.model.common.Cursor {
   org.joda.time.DateTime cursorTime;
 }
 class google.registry.model.common.DatabaseTransitionSchedule {
-  @Id long id;
+  @Id java.lang.String id;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.common.DatabaseTransitionSchedule$PrimaryDatabase, google.registry.model.common.DatabaseTransitionSchedule$PrimaryDatabaseTransition> databaseTransitions;
 }

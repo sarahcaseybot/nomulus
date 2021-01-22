@@ -15,73 +15,57 @@
 package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
-import google.registry.persistence.VKey;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DatabaseTransitionSchedule}. */
 public class DatabaseTransitionScheduleTest extends EntityTestCase {
 
   @Test
-  void testSuccess_setNewSchedule() {
-    VKey<DatabaseTransitionSchedule> key =
-        VKey.create(
-            DatabaseTransitionSchedule.class,
-            SINGLETON_ID,
-            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, SINGLETON_ID));
-
-    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key))).isEqualTo(Optional.empty());
-
+  void testSuccess_persistence() {
     TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions =
         TimedTransitionProperty.fromValueMap(
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
-    DatabaseTransitionSchedule.Builder builder = new DatabaseTransitionSchedule.Builder();
-    builder.setDatabaseTransitions(databaseTransitions.toValueMap());
-    ofyTm().transactNew(() -> ofyTm().put(builder.build()));
+    DatabaseTransitionSchedule schedule =
+        DatabaseTransitionSchedule.create("testEntity", databaseTransitions);
+    ofyTm().transactNew(() -> ofyTm().put(schedule));
 
-    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key).get().databaseTransitions))
+    assertThat(DatabaseTransitionSchedule.get("testEntity").databaseTransitions)
         .isEqualTo(databaseTransitions);
   }
 
   @Test
   void testFailure_scheduleWithNoStartOfTime() {
-    DatabaseTransitionSchedule.Builder builder = new DatabaseTransitionSchedule.Builder();
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            builder.setDatabaseTransitions(
-                ImmutableSortedMap.of(fakeClock.nowUtc(), PrimaryDatabase.DATASTORE)));
+            DatabaseTransitionSchedule.create(
+                "testEntity",
+                TimedTransitionProperty.fromValueMap(
+                    ImmutableSortedMap.of(fakeClock.nowUtc(), PrimaryDatabase.DATASTORE),
+                    PrimaryDatabaseTransition.class)));
   }
 
   @Test
   void testSuccess_getPrimaryDatabase() {
-    DatabaseTransitionSchedule.Builder builder = new DatabaseTransitionSchedule.Builder();
-    builder.setDatabaseTransitions(
-        ImmutableSortedMap.of(
-            START_OF_TIME,
-            PrimaryDatabase.DATASTORE,
-            fakeClock.nowUtc().minusDays(1),
-            PrimaryDatabase.CLOUD_SQL));
-    ofyTm().transactNew(() -> ofyTm().put(builder.build()));
-    VKey<DatabaseTransitionSchedule> key =
-        VKey.create(
-            DatabaseTransitionSchedule.class,
-            SINGLETON_ID,
-            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, SINGLETON_ID));
     DatabaseTransitionSchedule schedule =
-        ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key).get());
+        DatabaseTransitionSchedule.create(
+            "testEntity",
+            TimedTransitionProperty.fromValueMap(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    PrimaryDatabase.DATASTORE,
+                    fakeClock.nowUtc().minusDays(1),
+                    PrimaryDatabase.CLOUD_SQL),
+                PrimaryDatabaseTransition.class));
     assertThat(schedule.getPrimaryDatabase(fakeClock.nowUtc()))
         .isEqualTo(PrimaryDatabase.CLOUD_SQL);
     assertThat(schedule.getPrimaryDatabase(fakeClock.nowUtc().minusDays(5)))

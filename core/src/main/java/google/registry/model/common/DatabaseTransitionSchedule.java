@@ -15,21 +15,31 @@
 package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSortedMap;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Mapify;
-import google.registry.model.Buildable;
+import com.googlecode.objectify.annotation.Parent;
+import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import javax.annotation.concurrent.Immutable;
 import org.joda.time.DateTime;
 
 @Entity
 @Immutable
-public class DatabaseTransitionSchedule extends CrossTldSingleton implements DatastoreOnlyEntity {
+public class DatabaseTransitionSchedule extends ImmutableObject implements DatastoreOnlyEntity {
 
   /**
    * The name of the database to be treated as the primary database. The first entry in the schedule
@@ -59,10 +69,46 @@ public class DatabaseTransitionSchedule extends CrossTldSingleton implements Dat
     }
   }
 
+  @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
+
+  @Id String id;
+
   /** A property that tracks the primary database for a dual-read/dual-write database migration. */
   @Mapify(TimeMapper.class)
   TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions =
       TimedTransitionProperty.forMapify(PrimaryDatabase.DATASTORE, PrimaryDatabaseTransition.class);
+
+  /** A cache that loads the {@link DatabaseTransitionSchedule} for a given id. */
+  private static final LoadingCache<String, DatabaseTransitionSchedule> CACHE =
+      CacheBuilder.newBuilder()
+          .expireAfterWrite(
+              java.time.Duration.ofMillis(getSingletonCacheRefreshDuration().getMillis()))
+          .build(
+              new CacheLoader<String, DatabaseTransitionSchedule>() {
+                @Override
+                public DatabaseTransitionSchedule load(String id) throws Exception {
+
+                  VKey<DatabaseTransitionSchedule> key =
+                      VKey.create(
+                          DatabaseTransitionSchedule.class,
+                          id,
+                          Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, id));
+
+                  return ofyTm().transact(() -> ofyTm().loadByKey(key));
+                }
+              });
+
+  public static DatabaseTransitionSchedule create(
+      String id,
+      TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions) {
+    checkNotNull(id, "Id cannot be null");
+    checkNotNull(databaseTransitions, "databaseTransitions cannot be null");
+    databaseTransitions.checkValidity();
+    DatabaseTransitionSchedule instance = new DatabaseTransitionSchedule();
+    instance.id = id;
+    instance.databaseTransitions = databaseTransitions;
+    return instance;
+  }
 
   /** Returns the database that is indicated as primary at the given time. */
   public PrimaryDatabase getPrimaryDatabase(DateTime now) {
@@ -73,28 +119,7 @@ public class DatabaseTransitionSchedule extends CrossTldSingleton implements Dat
     return databaseTransitions.toValueMap();
   }
 
-  public static class Builder extends Buildable.Builder<DatabaseTransitionSchedule> {
-    public Builder() {}
-
-    public Builder setDatabaseTransitions(
-        ImmutableSortedMap<DateTime, PrimaryDatabase> databaseTransitionsMap) {
-      checkNotNull(databaseTransitionsMap, "Database Transitions map cannot be null");
-
-      getInstance().databaseTransitions =
-          TimedTransitionProperty.fromValueMap(
-              databaseTransitionsMap, PrimaryDatabaseTransition.class);
-
-      return this;
-    }
-
-    @Override
-    public DatabaseTransitionSchedule build() {
-      final DatabaseTransitionSchedule instance = getInstance();
-
-      // Check to ensure that there is a value for START_OF_TIME.
-      instance.databaseTransitions.checkValidity();
-
-      return super.build();
-    }
+  public static DatabaseTransitionSchedule get(String id) {
+    return CACHE.getUnchecked(id);
   }
 }
