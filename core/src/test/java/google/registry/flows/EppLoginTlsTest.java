@@ -90,6 +90,7 @@ class EppLoginTlsTest extends EppTestCase {
             .asBuilder()
             .setClientCertificate(CertificateSamples.SAMPLE_CERT2, DateTime.now(UTC))
             .build());
+    loggerToIntercept.addHandler(handler);
   }
 
   @Test
@@ -268,7 +269,6 @@ class EppLoginTlsTest extends EppTestCase {
   // TODO(sarahbot@): Remove this test once requirements are enforced in production
   void testCertificateDoesNotMeetRequirementsInProduction_succeeds() throws Exception {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    loggerToIntercept.addHandler(handler);
     // SAMPLE_CERT has a validity period that is too long
     setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     persistResource(
