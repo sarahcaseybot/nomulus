@@ -16,12 +16,14 @@ package google.registry.flows;
 
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.testing.TestLogHandler;
 import google.registry.config.RegistryEnvironment;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.testing.AppEngineExtension;
@@ -31,6 +33,8 @@ import google.registry.util.SelfSignedCaCertificate;
 import java.io.StringWriter;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -58,6 +62,10 @@ class EppLoginTlsTest extends EppTestCase {
           2048,
           ImmutableSet.of("secp256r1", "secp384r1"),
           clock);
+
+  private final Logger loggerToIntercept =
+      Logger.getLogger(TlsCredentials.class.getCanonicalName());
+  private final TestLogHandler handler = new TestLogHandler();
 
   void setCredentials(String clientCertificateHash, String clientCertificate) {
     setTransportCredentials(
@@ -260,6 +268,7 @@ class EppLoginTlsTest extends EppTestCase {
   // TODO(sarahbot@): Remove this test once requirements are enforced in production
   void testCertificateDoesNotMeetRequirementsInProduction_succeeds() throws Exception {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
+    loggerToIntercept.addHandler(handler);
     // SAMPLE_CERT has a validity period that is too long
     setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     persistResource(
@@ -271,5 +280,12 @@ class EppLoginTlsTest extends EppTestCase {
     // Even though the certificate contains security violations, the login will succeed in
     // production
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    assertAboutLogs()
+        .that(handler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            "Registrar certificate used for NewRegistrar does not meet certificate requirements:"
+                + " Certificate validity period is too long; it must be less than or equal to 398"
+                + " days.");
   }
 }
