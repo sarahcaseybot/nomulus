@@ -22,15 +22,18 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import google.registry.config.RegistryEnvironment;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.SelfSignedCaCertificate;
 import java.io.StringWriter;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.shaded.org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
@@ -43,6 +46,10 @@ class EppLoginTlsTest extends EppTestCase {
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+
+  @RegisterExtension
+  @Order(value = Integer.MAX_VALUE)
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   private final CertificateChecker certificateChecker =
       new CertificateChecker(
@@ -247,5 +254,22 @@ class EppLoginTlsTest extends EppTestCase {
                     + "Certificate is expired.\n"
                     + "Certificate validity period is too long; it must be less than or equal to"
                     + " 398 days."));
+  }
+
+  @Test
+  // TODO(sarahbot@): Remove this test once requirements are enforced in production
+  void testCertificateDoesNotMeetRequirementsInProduction_succeeds() throws Exception {
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
+    // SAMPLE_CERT has a validity period that is too long
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
+            .build());
+    // Even though the certificate contains security violations, the login will succeed in
+    // production
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
   }
 }
