@@ -38,7 +38,7 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
         DatabaseTransitionSchedule.create("testEntity", databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
 
-    assertThat(DatabaseTransitionSchedule.get("testEntity").databaseTransitions)
+    assertThat(DatabaseTransitionSchedule.get("testEntity").get().databaseTransitions)
         .isEqualTo(databaseTransitions);
   }
 

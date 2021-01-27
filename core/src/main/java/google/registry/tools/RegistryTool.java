@@ -70,6 +70,7 @@ public final class RegistryTool {
           .put("get_allocation_token", GetAllocationTokenCommand.class)
           .put("get_claims_list", GetClaimsListCommand.class)
           .put("get_contact", GetContactCommand.class)
+          .put("get_database_transition_schedule", GetDatabaseTransitionScheduleCommand.class)
           .put("get_domain", GetDomainCommand.class)
           .put("get_history_entries", GetHistoryEntriesCommand.class)
           .put("get_host", GetHostCommand.class)

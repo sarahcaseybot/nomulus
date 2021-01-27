@@ -34,6 +34,7 @@ import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreOnlyEntity;
+import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import org.joda.time.DateTime;
 
@@ -79,14 +80,14 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
       TimedTransitionProperty.forMapify(PrimaryDatabase.DATASTORE, PrimaryDatabaseTransition.class);
 
   /** A cache that loads the {@link DatabaseTransitionSchedule} for a given id. */
-  private static final LoadingCache<String, DatabaseTransitionSchedule> CACHE =
+  private static final LoadingCache<String, Optional<DatabaseTransitionSchedule>> CACHE =
       CacheBuilder.newBuilder()
           .expireAfterWrite(
               java.time.Duration.ofMillis(getSingletonCacheRefreshDuration().getMillis()))
           .build(
-              new CacheLoader<String, DatabaseTransitionSchedule>() {
+              new CacheLoader<String, Optional<DatabaseTransitionSchedule>>() {
                 @Override
-                public DatabaseTransitionSchedule load(String id) throws Exception {
+                public Optional<DatabaseTransitionSchedule> load(String id) throws Exception {
 
                   VKey<DatabaseTransitionSchedule> key =
                       VKey.create(
@@ -94,7 +95,7 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
                           id,
                           Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, id));
 
-                  return ofyTm().transact(() -> ofyTm().loadByKey(key));
+                  return ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
                 }
               });
 
@@ -119,7 +120,7 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
     return databaseTransitions.toValueMap();
   }
 
-  public static DatabaseTransitionSchedule get(String id) {
+  public static Optional<DatabaseTransitionSchedule> get(String id) {
     return CACHE.getUnchecked(id);
   }
 }

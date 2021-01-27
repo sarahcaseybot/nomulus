@@ -14,18 +14,13 @@
 
 package google.registry.tools;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.persistence.VKey;
 import google.registry.tools.params.TransitionListParameter.PrimaryDatabaseTransitions;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -50,15 +45,8 @@ public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
 
   @Override
   protected void init() {
-    VKey<DatabaseTransitionSchedule> key =
-        VKey.create(
-            DatabaseTransitionSchedule.class,
-            scheduleId,
-            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, scheduleId));
-
-    // Retrieve the existing schedule
     Optional<DatabaseTransitionSchedule> currentSchedule =
-        ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
+        DatabaseTransitionSchedule.get(scheduleId);
 
     DatabaseTransitionSchedule newSchedule =
         DatabaseTransitionSchedule.create(
