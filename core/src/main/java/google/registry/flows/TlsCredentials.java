@@ -16,7 +16,6 @@ package google.registry.flows;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static google.registry.request.RequestParameters.extractOptionalHeader;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -33,12 +32,7 @@ import google.registry.flows.certs.CertificateChecker.InsecureCertificateExcepti
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
-import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -155,30 +149,14 @@ public class TlsCredentials implements TransportCredentials {
           "Request from registrar %s did not include X-SSL-Full-Certificate.",
           registrar.getClientId());
     } else {
-      X509Certificate passedCert;
-      X509Certificate storedCert;
-      X509Certificate storedFailoverCert;
-
-      try {
-        storedCert = stringToCert(registrar.getClientCertificate());
-        storedFailoverCert = stringToCert(registrar.getFailoverClientCertificate());
-        passedCert = encodedCertStringToCert(clientCertificate.get());
-      } catch (Exception e) {
-        //TODO(Sarahbot@): remove this catch once we know it's working
-        logger.atWarning().log(
-            "Error converting certificate string to certificate for %s: %s",
-            registrar.getClientId(), e);
-        validateCertificateHash(registrar);
-        return;
-      }
-
       // Check if the certificate is equal to the one on file for the registrar.
-      if (passedCert.equals(storedCert) || passedCert.equals(storedFailoverCert)) {
+      if (clientCertificate.equals(registrar.getClientCertificate())
+          || clientCertificate.equals(registrar.getFailoverClientCertificate())) {
         // Check certificate for any requirement violations
         // TODO(Sarahbot@): Throw exceptions instead of just logging once requirement enforcement
         // begins
         try {
-          certificateChecker.validateCertificate(passedCert);
+          certificateChecker.validateCertificate(clientCertificate.get());
         } catch (InsecureCertificateException e) {
           // throw exception in unit tests and Sandbox
           if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
@@ -198,8 +176,7 @@ public class TlsCredentials implements TransportCredentials {
       // Log an error and validate using certificate hash instead
       // TODO(sarahbot): throw a BadRegistrarCertificateException once hash is no longer used as
       // failover
-      logger.atWarning().log(
-          "Non-matching certificate for registrar %s.", registrar.getClientId());
+      logger.atWarning().log("Non-matching certificate for registrar %s.", registrar.getClientId());
     }
     validateCertificateHash(registrar);
   }
@@ -241,25 +218,6 @@ public class TlsCredentials implements TransportCredentials {
     if (!registrar.verifyPassword(password)) {
       throw new BadRegistrarPasswordException();
     }
-  }
-
-  private X509Certificate stringToCert(Optional<String> certificateString)
-      throws CertificateException {
-    if (certificateString.isPresent()) {
-      ByteArrayInputStream inputStream =
-          new ByteArrayInputStream(certificateString.get().getBytes(UTF_8));
-      CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-      return (X509Certificate) certificateFactory.generateCertificate(inputStream);
-    }
-    return null;
-  }
-
-  private X509Certificate encodedCertStringToCert(String encodedCertString)
-      throws CertificateException {
-    byte decodedCert[] = Base64.getDecoder().decode(encodedCertString);
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(decodedCert);
-    CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-    return (X509Certificate) certificateFactory.generateCertificate(inputStream);
   }
 
   @Override
