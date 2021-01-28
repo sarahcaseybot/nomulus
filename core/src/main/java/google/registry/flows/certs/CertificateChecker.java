@@ -101,6 +101,21 @@ public class CertificateChecker {
   }
 
   /**
+   * Checks the given certificate string for violations and throws an exception if any violations
+   * exist.
+   */
+  public void validateCertificate(X509Certificate certificate) throws InsecureCertificateException {
+    ImmutableSet<CertificateViolation> violations = checkCertificate(certificate);
+    if (!violations.isEmpty()) {
+      String displayMessages =
+          violations.stream()
+              .map(violation -> getViolationDisplayMessage(violation))
+              .collect(Collectors.joining("\n"));
+      throw new InsecureCertificateException(violations, displayMessages);
+    }
+  }
+
+  /**
    * Checks a given certificate for violations and returns a list of all the violations the
    * certificate has.
    */

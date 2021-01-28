@@ -28,8 +28,11 @@ import google.registry.flows.TlsCredentials;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.tools.params.PathParameter;
+import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.CertificateFactory;
+import java.util.Base64;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -79,8 +82,16 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
         "Can't specify both --cert_hash and --cert_file");
     String clientCertificate = "";
     if (clientCertificatePath != null) {
-      clientCertificate = new String(Files.readAllBytes(clientCertificatePath), US_ASCII);
-      clientCertificateHash = getCertificateHash(loadCertificate(clientCertificate));
+      byte[] certificateBytes = Files.readAllBytes(clientCertificatePath);
+      // How proxy converts to a string
+      clientCertificate =
+          Base64.getEncoder()
+              .encodeToString(
+                  CertificateFactory.getInstance("X.509")
+                      .generateCertificate(new ByteArrayInputStream(certificateBytes))
+                      .getEncoded());
+      clientCertificateHash =
+          getCertificateHash(loadCertificate(new String(certificateBytes, US_ASCII)));
     }
     Registrar registrar =
         checkArgumentPresent(
