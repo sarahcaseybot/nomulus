@@ -16,8 +16,8 @@ package google.registry.flows.session;
 
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.joda.time.DateTimeZone.UTC;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -68,7 +68,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
         Base64.getEncoder()
             .encodeToString(
                 CertificateFactory.getInstance("X.509")
-                        .generateCertificate(new ByteArrayInputStream(GOOD_CERT.get().getBytes(UTF_8)))
+                    .generateCertificate(new ByteArrayInputStream(GOOD_CERT.get().getBytes(UTF_8)))
                     .getEncoded());
     encodedCertString = Optional.of(proxyEncoded);
   }
@@ -131,7 +131,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
         Base64.getEncoder()
             .encodeToString(
                 CertificateFactory.getInstance("X.509")
-                        .generateCertificate(new ByteArrayInputStream(BAD_CERT.get().getBytes(UTF_8)))
+                    .generateCertificate(new ByteArrayInputStream(BAD_CERT.get().getBytes(UTF_8)))
                     .getEncoded());
     credentials =
         new TlsCredentials(
