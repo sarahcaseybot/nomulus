@@ -30,8 +30,12 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.SelfSignedCaCertificate;
+import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +47,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.shaded.org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** Test logging in with TLS credentials. */
 class EppLoginTlsTest extends EppTestCase {
@@ -67,6 +72,8 @@ class EppLoginTlsTest extends EppTestCase {
       Logger.getLogger(TlsCredentials.class.getCanonicalName());
   private final TestLogHandler handler = new TestLogHandler();
 
+  private String encodedCertString;
+
   void setCredentials(String clientCertificateHash, String clientCertificate) {
     setTransportCredentials(
         new TlsCredentials(
@@ -78,7 +85,7 @@ class EppLoginTlsTest extends EppTestCase {
   }
 
   @BeforeEach
-  void beforeEach() {
+  void beforeEach() throws CertificateException {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -91,18 +98,26 @@ class EppLoginTlsTest extends EppTestCase {
             .setClientCertificate(CertificateSamples.SAMPLE_CERT2, DateTime.now(UTC))
             .build());
     loggerToIntercept.addHandler(handler);
+    // How proxy converts to a string
+    encodedCertString =
+        Base64.getEncoder()
+            .encodeToString(
+                CertificateFactory.getInstance("X.509")
+                        .generateCertificate(
+                            new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT3.getBytes(UTF_8)))
+                    .getEncoded());
   }
 
   @Test
   void testLoginLogout() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
   }
 
   @Test
   void testLogin_wrongPasswordFails() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
     // For TLS login, we also check the epp xml password.
     assertThatLogin("NewRegistrar", "incorrect")
         .hasResponse(
@@ -112,7 +127,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMultiLogin() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -126,7 +141,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testNonAuthedLogin_fails() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
+    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
     assertThatLogin("TheRegistrar", "password2")
         .hasResponse(
             "response_error.xml",
@@ -155,7 +170,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodPrimaryCertificate() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -168,7 +183,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodFailoverCertificate() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -181,7 +196,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -210,8 +225,16 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testCertificateDoesNotMeetRequirements_fails() throws Exception {
+    // How proxy converts to a string
+    String proxyEncoded =
+        Base64.getEncoder()
+            .encodeToString(
+                CertificateFactory.getInstance("X.509")
+                        .generateCertificate(
+                            new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
+                    .getEncoded());
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -232,7 +255,6 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testCertificateDoesNotMeetMultipleRequirements_fails() throws Exception {
-
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 "test", clock.nowUtc().plusDays(100), clock.nowUtc().plusDays(5000))
@@ -243,9 +265,11 @@ class EppLoginTlsTest extends EppTestCase {
       PemObjectGenerator generator = new JcaMiscPEMGenerator(certificate);
       pw.writeObject(generator);
     }
+    // How proxy converts to a string
+    String proxyEncoded = Base64.getEncoder().encodeToString(certificate.getEncoded());
 
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, sw.toString());
+    setCredentials(null, proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -270,7 +294,15 @@ class EppLoginTlsTest extends EppTestCase {
   void testCertificateDoesNotMeetRequirementsInProduction_succeeds() throws Exception {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
+    // How proxy converts to a string
+    String proxyEncoded =
+        Base64.getEncoder()
+            .encodeToString(
+                CertificateFactory.getInstance("X.509")
+                        .generateCertificate(
+                            new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
+                    .getEncoded());
+    setCredentials(null, proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()

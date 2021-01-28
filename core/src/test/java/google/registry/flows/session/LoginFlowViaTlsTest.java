@@ -17,6 +17,7 @@ package google.registry.flows.session;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -30,8 +31,13 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.util.Base64;
 import java.util.Optional;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LoginFlow} when accessed via a TLS transport. */
@@ -54,6 +60,18 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
           2048,
           ImmutableSet.of("secp256r1", "secp384r1"),
           clock);
+  private Optional<String> encodedCertString;
+
+  @BeforeEach
+  void beforeEach() throws CertificateException {
+    String proxyEncoded =
+        Base64.getEncoder()
+            .encodeToString(
+                CertificateFactory.getInstance("X.509")
+                        .generateCertificate(new ByteArrayInputStream(GOOD_CERT.get().getBytes(UTF_8)))
+                    .getEncoded());
+    encodedCertString = Optional.of(proxyEncoded);
+  }
 
   @Override
   protected Registrar.Builder getRegistrarBuilder() {
@@ -66,7 +84,8 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   @Test
   void testSuccess_withGoodCredentials() throws Exception {
     persistResource(getRegistrarBuilder().build());
-    credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IP, certificateChecker);
+    credentials =
+        new TlsCredentials(true, GOOD_CERT_HASH, encodedCertString, GOOD_IP, certificateChecker);
     doSuccessfulTest("login_valid.xml");
   }
 
@@ -78,7 +97,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
                 ImmutableList.of(CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
             .build());
     credentials =
-        new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IPV6, certificateChecker);
+        new TlsCredentials(true, GOOD_CERT_HASH, encodedCertString, GOOD_IPV6, certificateChecker);
     doSuccessfulTest("login_valid.xml");
   }
 
@@ -90,7 +109,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
                 ImmutableList.of(CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
             .build());
     credentials =
-        new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IPV6, certificateChecker);
+        new TlsCredentials(true, GOOD_CERT_HASH, encodedCertString, GOOD_IPV6, certificateChecker);
     doSuccessfulTest("login_valid.xml");
   }
 
@@ -100,14 +119,23 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
         getRegistrarBuilder()
             .setIpAddressAllowList(ImmutableList.of(CidrAddressBlock.create("192.168.1.255/24")))
             .build());
-    credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_CERT, GOOD_IP, certificateChecker);
+    credentials =
+        new TlsCredentials(true, GOOD_CERT_HASH, encodedCertString, GOOD_IP, certificateChecker);
     doSuccessfulTest("login_valid.xml");
   }
 
   @Test
-  void testFailure_incorrectClientCertificateHash() {
+  void testFailure_incorrectClientCertificateHash() throws Exception {
     persistResource(getRegistrarBuilder().build());
-    credentials = new TlsCredentials(true, BAD_CERT_HASH, BAD_CERT, GOOD_IP, certificateChecker);
+    String proxyEncoded =
+        Base64.getEncoder()
+            .encodeToString(
+                CertificateFactory.getInstance("X.509")
+                        .generateCertificate(new ByteArrayInputStream(BAD_CERT.get().getBytes(UTF_8)))
+                    .getEncoded());
+    credentials =
+        new TlsCredentials(
+            true, BAD_CERT_HASH, Optional.of(proxyEncoded), GOOD_IP, certificateChecker);
     doFailingTest("login_valid.xml", BadRegistrarCertificateException.class);
   }
 
