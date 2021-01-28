@@ -164,7 +164,7 @@ public class TlsCredentials implements TransportCredentials {
         storedFailoverCert = stringToCert(registrar.getFailoverClientCertificate());
         passedCert = encodedCertStringToCert(clientCertificate.get());
       } catch (Exception e) {
-        // TODO(Sarahbot@): remove this catch once we know it's working
+        //TODO(Sarahbot@): remove this catch once we know it's working
         logger.atWarning().log(
             "Error converting certificate string to certificate for %s: %s",
             registrar.getClientId(), e);
@@ -198,7 +198,8 @@ public class TlsCredentials implements TransportCredentials {
       // Log an error and validate using certificate hash instead
       // TODO(sarahbot): throw a BadRegistrarCertificateException once hash is no longer used as
       // failover
-      logger.atWarning().log("Non-matching certificate for registrar %s.", registrar.getClientId());
+      logger.atWarning().log(
+          "Non-matching certificate for registrar %s.", registrar.getClientId());
     }
     validateCertificateHash(registrar);
   }

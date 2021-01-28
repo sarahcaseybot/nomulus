@@ -18,7 +18,6 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.shaded.org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** Test logging in with TLS credentials. */
 class EppLoginTlsTest extends EppTestCase {
@@ -103,8 +103,8 @@ class EppLoginTlsTest extends EppTestCase {
         Base64.getEncoder()
             .encodeToString(
                 CertificateFactory.getInstance("X.509")
-                    .generateCertificate(
-                        new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT3.getBytes(UTF_8)))
+                        .generateCertificate(
+                            new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT3.getBytes(UTF_8)))
                     .getEncoded());
   }
 
@@ -230,8 +230,8 @@ class EppLoginTlsTest extends EppTestCase {
         Base64.getEncoder()
             .encodeToString(
                 CertificateFactory.getInstance("X.509")
-                    .generateCertificate(
-                        new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
+                        .generateCertificate(
+                            new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
                     .getEncoded());
     // SAMPLE_CERT has a validity period that is too long
     setCredentials(CertificateSamples.SAMPLE_CERT_HASH, proxyEncoded);
@@ -299,8 +299,8 @@ class EppLoginTlsTest extends EppTestCase {
         Base64.getEncoder()
             .encodeToString(
                 CertificateFactory.getInstance("X.509")
-                    .generateCertificate(
-                        new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
+                        .generateCertificate(
+                            new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
                     .getEncoded());
     setCredentials(null, proxyEncoded);
     persistResource(
