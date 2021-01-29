@@ -46,12 +46,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
-import java.io.ByteArrayInputStream;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -222,20 +216,6 @@ public class EppTestCase {
         "epp.response.trID.svTRID");
     ofy().clearSessionCache(); // Clear the cache like OfyFilter would.
     return actualOutput;
-  }
-
-  public static String encodeX509CertificateFromPemString(String certificateString)
-      throws CertificateException {
-    X509Certificate certificate =
-        (X509Certificate)
-            CertificateFactory.getInstance("X.509")
-                .generateCertificate(new ByteArrayInputStream(certificateString.getBytes(UTF_8)));
-    return encodeX509Certificate(certificate);
-  }
-
-  static String encodeX509Certificate(X509Certificate certificate)
-      throws CertificateEncodingException {
-    return Base64.getEncoder().encodeToString(certificate.getEncoded());
   }
 
   private FakeResponse executeXmlCommand(String inputXml) throws Exception {

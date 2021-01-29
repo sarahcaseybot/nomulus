@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
+import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static google.registry.util.X509Utils.loadCertificate;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -28,11 +29,8 @@ import google.registry.flows.TlsCredentials;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.tools.params.PathParameter;
-import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.cert.CertificateFactory;
-import java.util.Base64;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -80,18 +78,11 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     checkArgument(
         clientCertificatePath == null || isNullOrEmpty(clientCertificateHash),
         "Can't specify both --cert_hash and --cert_file");
-    String clientCertificate = "";
+    String encodedCertificate = "";
     if (clientCertificatePath != null) {
-      byte[] certificateBytes = Files.readAllBytes(clientCertificatePath);
-      // How proxy converts to a string
-      clientCertificate =
-          Base64.getEncoder()
-              .encodeToString(
-                  CertificateFactory.getInstance("X.509")
-                      .generateCertificate(new ByteArrayInputStream(certificateBytes))
-                      .getEncoded());
-      clientCertificateHash =
-          getCertificateHash(loadCertificate(new String(certificateBytes, US_ASCII)));
+      String certificateString = new String(Files.readAllBytes(clientCertificatePath), US_ASCII);
+      encodedCertificate = encodeX509CertificateFromPemString(certificateString);
+      clientCertificateHash = getCertificateHash(loadCertificate(clientCertificatePath));
     }
     Registrar registrar =
         checkArgumentPresent(
@@ -99,7 +90,7 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),
-            Optional.ofNullable(clientCertificate),
+            Optional.ofNullable(encodedCertificate),
             Optional.ofNullable(clientIpAddress),
             certificateChecker)
         .validate(registrar, password);

@@ -18,6 +18,8 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.X509Utils.encodeX509Certificate;
+import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;

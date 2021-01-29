@@ -16,7 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static google.registry.request.RequestParameters.extractOptionalHeader;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static google.registry.util.X509Utils.loadCertificate;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -36,7 +36,6 @@ import google.registry.util.CidrAddressBlock;
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Optional;
@@ -247,10 +246,7 @@ public class TlsCredentials implements TransportCredentials {
   private Optional<X509Certificate> deserializePemCert(Optional<String> certificateString)
       throws CertificateException {
     if (certificateString.isPresent()) {
-      ByteArrayInputStream inputStream =
-          new ByteArrayInputStream(certificateString.get().getBytes(UTF_8));
-      CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-      return Optional.of((X509Certificate) certificateFactory.generateCertificate(inputStream));
+      return Optional.of(loadCertificate(certificateString.get()));
     }
     return Optional.empty();
   }
@@ -259,8 +255,7 @@ public class TlsCredentials implements TransportCredentials {
   private X509Certificate decodeCertString(String encodedCertString) throws CertificateException {
     byte decodedCert[] = Base64.getDecoder().decode(encodedCertString);
     ByteArrayInputStream inputStream = new ByteArrayInputStream(decodedCert);
-    CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-    return (X509Certificate) certificateFactory.generateCertificate(inputStream);
+    return loadCertificate(inputStream);
   }
 
   @Override

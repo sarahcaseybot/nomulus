@@ -91,13 +91,7 @@ public class CertificateChecker {
    */
   public void validateCertificate(String certificateString) throws InsecureCertificateException {
     ImmutableSet<CertificateViolation> violations = checkCertificate(certificateString);
-    if (!violations.isEmpty()) {
-      String displayMessages =
-          violations.stream()
-              .map(violation -> getViolationDisplayMessage(violation))
-              .collect(Collectors.joining("\n"));
-      throw new InsecureCertificateException(violations, displayMessages);
-    }
+    constructAndThrowExceptionIfNeeded(violations);
   }
 
   /**
@@ -106,6 +100,11 @@ public class CertificateChecker {
    */
   public void validateCertificate(X509Certificate certificate) throws InsecureCertificateException {
     ImmutableSet<CertificateViolation> violations = checkCertificate(certificate);
+    constructAndThrowExceptionIfNeeded(violations);
+  }
+
+  private void constructAndThrowExceptionIfNeeded(ImmutableSet<CertificateViolation> violations)
+      throws InsecureCertificateException {
     if (!violations.isEmpty()) {
       String displayMessages =
           violations.stream()

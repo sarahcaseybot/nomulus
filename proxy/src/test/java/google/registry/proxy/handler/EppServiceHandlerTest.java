@@ -21,6 +21,7 @@ import static google.registry.proxy.TestUtils.assertHttpRequestEquivalent;
 import static google.registry.proxy.TestUtils.makeEppHttpResponse;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.X509Utils.getCertificateHash;
+import static google.registry.util.X509Utils.loadCertificate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -252,14 +253,8 @@ class EppServiceHandlerTest {
     String encodedCert = request.headers().get("X-SSL-Full-Certificate");
     assertThat(encodedCert).isNotEqualTo(SAMPLE_CERT);
     X509Certificate decodedCert =
-        (X509Certificate)
-            CertificateFactory.getInstance("X.509")
-                .generateCertificate(
-                    new ByteArrayInputStream(Base64.getDecoder().decode(encodedCert)));
-    X509Certificate pemCert =
-        (X509Certificate)
-            CertificateFactory.getInstance("X.509")
-                .generateCertificate(new ByteArrayInputStream(SAMPLE_CERT.getBytes(UTF_8)));
+        loadCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(encodedCert)));
+    X509Certificate pemCert = loadCertificate(SAMPLE_CERT);
     assertThat(decodedCert).isEqualTo(pemCert);
   }
 
