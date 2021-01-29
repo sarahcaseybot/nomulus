@@ -179,11 +179,16 @@ public final class X509Utils {
     newCrl.verify(rootCert.getPublicKey());
   }
 
+  /** Constructs an X.509 certificate from a PEM string and encodes it. */
   public static String encodeX509CertificateFromPemString(String certificateString)
       throws CertificateException {
     return encodeX509Certificate(loadCertificate(certificateString));
   }
 
+  /**
+   * Encodes an X.509 certificate in the same form that the proxy encodes a certificate before
+   * passing it via an HTTP header.
+   */
   public static String encodeX509Certificate(X509Certificate certificate)
       throws CertificateEncodingException {
     return Base64.getEncoder().encodeToString(certificate.getEncoded());

@@ -90,8 +90,7 @@ public class CertificateChecker {
    * exist.
    */
   public void validateCertificate(String certificateString) throws InsecureCertificateException {
-    ImmutableSet<CertificateViolation> violations = checkCertificate(certificateString);
-    constructAndThrowExceptionIfNeeded(violations);
+    handleCertViolations(checkCertificate(certificateString));
   }
 
   /**
@@ -99,11 +98,10 @@ public class CertificateChecker {
    * exist.
    */
   public void validateCertificate(X509Certificate certificate) throws InsecureCertificateException {
-    ImmutableSet<CertificateViolation> violations = checkCertificate(certificate);
-    constructAndThrowExceptionIfNeeded(violations);
+    handleCertViolations(checkCertificate(certificate));
   }
 
-  private void constructAndThrowExceptionIfNeeded(ImmutableSet<CertificateViolation> violations)
+  private void handleCertViolations(ImmutableSet<CertificateViolation> violations)
       throws InsecureCertificateException {
     if (!violations.isEmpty()) {
       String displayMessages =

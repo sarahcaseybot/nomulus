@@ -303,11 +303,11 @@ class EppLoginTlsTest extends EppTestCase {
     String certPem =
         String.format(
             "Bag Attributes\n"
-                + "    localKeyID: 3F 1B 8A 32 3D 03 EC 54 BC 7A C3 21 A9 FA 19 66 CB B8 72 23 \n"
+                + "    localKeyID: 1F 1C 3A 3A 4C 03 EC C4 BC 7A C3 21 A9 F2 13 66 21 B8 7B 26 \n"
                 + "subject=/C=US/ST=New York/L=New"
-                + " York/O=Google/OU=CRR/CN=CharlestonRoadRegistry.com/emailAddress=domain-registry-alerts-testing@google.com\n"
-                + "issuer=/C=US/ST=NY/L=NYC/O=CRR/OU=TEST CA/CN=TEST"
-                + " CA/emailAddress=domain-registry-eng+testing@google.com\n"
+                + " York/O=Test/OU=ABC/CN=tester.com/emailAddress=test-certificate@test.com\n"
+                + "issuer=/C=US/ST=NY/L=NYC/O=ABC/OU=TEST CA/CN=TEST"
+                + " CA/emailAddress=testing@test.com\n"
                 + "%s",
             CertificateSamples.SAMPLE_CERT3);
 
@@ -327,11 +327,11 @@ class EppLoginTlsTest extends EppTestCase {
     String certPem =
         String.format(
             "Bag Attributes\n"
-                + "    localKeyID: 3F 1B 8A 32 3D 03 EC 54 BC 7A C3 21 A9 FA 19 66 CB B8 72 23 \n"
+                + "    localKeyID: 1F 1C 3A 3A 4C 03 EC C4 BC 7A C3 21 A9 F2 13 66 21 B8 7B 26 \n"
                 + "subject=/C=US/ST=New York/L=New"
-                + " York/O=Google/OU=CRR/CN=CharlestonRoadRegistry.com/emailAddress=domain-registry-alerts-testing@google.com\n"
-                + "issuer=/C=US/ST=NY/L=NYC/O=CRR/OU=TEST CA/CN=TEST"
-                + " CA/emailAddress=domain-registry-eng+testing@google.com\n"
+                + " York/O=Test/OU=ABC/CN=tester.com/emailAddress=test-certificate@test.com\n"
+                + "issuer=/C=US/ST=NY/L=NYC/O=ABC/OU=TEST CA/CN=TEST"
+                + " CA/emailAddress=testing@test.com\n"
                 + "%s",
             CertificateSamples.SAMPLE_CERT);
 
