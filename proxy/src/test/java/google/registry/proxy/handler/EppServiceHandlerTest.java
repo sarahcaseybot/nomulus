@@ -47,6 +47,7 @@ import io.netty.util.concurrent.Promise;
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -237,6 +238,29 @@ class EppServiceHandlerTest {
     // Nothing further to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_requestContainsEncodedCertificate() throws Exception {
+    setHandshakeSuccess();
+    // First inbound message is hello.
+    channel.readInbound();
+    String content = "<epp>stuff</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
+    FullHttpRequest request = channel.readInbound();
+    assertThat(request).isEqualTo(makeEppHttpRequestWithCertificate(content));
+    String encodedCert = request.headers().get("X-SSL-Full-Certificate");
+    assertThat(encodedCert).isNotEqualTo(SAMPLE_CERT);
+    X509Certificate decodedCert =
+        (X509Certificate)
+            CertificateFactory.getInstance("X.509")
+                .generateCertificate(
+                    new ByteArrayInputStream(Base64.getDecoder().decode(encodedCert)));
+    X509Certificate pemCert =
+        (X509Certificate)
+            CertificateFactory.getInstance("X.509")
+                .generateCertificate(new ByteArrayInputStream(SAMPLE_CERT.getBytes(UTF_8)));
+    assertThat(decodedCert).isEqualTo(pemCert);
   }
 
   @Test
