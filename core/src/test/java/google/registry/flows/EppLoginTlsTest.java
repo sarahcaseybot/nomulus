@@ -297,4 +297,61 @@ class EppLoginTlsTest extends EppTestCase {
                 + " Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
   }
+
+  @Test
+  void testRegistrarCertificateContainsExtraMetadata_succeeds() throws Exception {
+    String certPem =
+        String.format(
+            "Bag Attributes\n"
+                + "    localKeyID: 3F 1B 8A 32 3D 03 EC 54 BC 7A C3 21 A9 FA 19 66 CB B8 72 23 \n"
+                + "subject=/C=US/ST=New York/L=New"
+                + " York/O=Google/OU=CRR/CN=CharlestonRoadRegistry.com/emailAddress=domain-registry-alerts-testing@google.com\n"
+                + "issuer=/C=US/ST=NY/L=NYC/O=CRR/OU=TEST CA/CN=TEST"
+                + " CA/emailAddress=domain-registry-eng+testing@google.com\n"
+                + "%s",
+            CertificateSamples.SAMPLE_CERT3);
+
+    setCredentials(null, encodeX509CertificateFromPemString(certPem));
+    DateTime now = DateTime.now(UTC);
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(certPem, now)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, now)
+            .build());
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+  }
+
+  @Test
+  void testRegistrarCertificateContainsExtraMetadataAndViolations_fails() throws Exception {
+    String certPem =
+        String.format(
+            "Bag Attributes\n"
+                + "    localKeyID: 3F 1B 8A 32 3D 03 EC 54 BC 7A C3 21 A9 FA 19 66 CB B8 72 23 \n"
+                + "subject=/C=US/ST=New York/L=New"
+                + " York/O=Google/OU=CRR/CN=CharlestonRoadRegistry.com/emailAddress=domain-registry-alerts-testing@google.com\n"
+                + "issuer=/C=US/ST=NY/L=NYC/O=CRR/OU=TEST CA/CN=TEST"
+                + " CA/emailAddress=domain-registry-eng+testing@google.com\n"
+                + "%s",
+            CertificateSamples.SAMPLE_CERT);
+
+    setCredentials(null, encodeX509CertificateFromPemString(certPem));
+    DateTime now = DateTime.now(UTC);
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(certPem, now)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, now)
+            .build());
+    assertThatLogin("NewRegistrar", "foo-BAR2")
+        .hasResponse(
+            "response_error.xml",
+            ImmutableMap.of(
+                "CODE",
+                "2200",
+                "MSG",
+                "Registrar certificate contains the following security violations:\n"
+                    + "Certificate validity period is too long; it must be less than or equal to"
+                    + " 398 days."));
+  }
 }
