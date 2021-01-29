@@ -305,9 +305,9 @@ class EppLoginTlsTest extends EppTestCase {
             "Bag Attributes\n"
                 + "    localKeyID: 1F 1C 3A 3A 4C 03 EC C4 BC 7A C3 21 A9 F2 13 66 21 B8 7B 26 \n"
                 + "subject=/C=US/ST=New York/L=New"
-                + " York/O=Test/OU=ABC/CN=tester.com/emailAddress=test-certificate@test.com\n"
+                + " York/O=Test/OU=ABC/CN=tester.test/emailAddress=test-certificate@test.test\n"
                 + "issuer=/C=US/ST=NY/L=NYC/O=ABC/OU=TEST CA/CN=TEST"
-                + " CA/emailAddress=testing@test.com\n"
+                + " CA/emailAddress=testing@test.test\n"
                 + "%s",
             CertificateSamples.SAMPLE_CERT3);
 
@@ -329,9 +329,9 @@ class EppLoginTlsTest extends EppTestCase {
             "Bag Attributes\n"
                 + "    localKeyID: 1F 1C 3A 3A 4C 03 EC C4 BC 7A C3 21 A9 F2 13 66 21 B8 7B 26 \n"
                 + "subject=/C=US/ST=New York/L=New"
-                + " York/O=Test/OU=ABC/CN=tester.com/emailAddress=test-certificate@test.com\n"
+                + " York/O=Test/OU=ABC/CN=tester.test/emailAddress=test-certificate@test.test\n"
                 + "issuer=/C=US/ST=NY/L=NYC/O=ABC/OU=TEST CA/CN=TEST"
-                + " CA/emailAddress=testing@test.com\n"
+                + " CA/emailAddress=testing@test.test\n"
                 + "%s",
             CertificateSamples.SAMPLE_CERT);
 
