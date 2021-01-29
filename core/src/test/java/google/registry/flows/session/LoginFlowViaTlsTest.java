@@ -16,13 +16,13 @@ package google.registry.flows.session;
 
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.net.InetAddresses;
+import google.registry.flows.EppTestCase;
 import google.registry.flows.TlsCredentials;
 import google.registry.flows.TlsCredentials.BadRegistrarCertificateException;
 import google.registry.flows.TlsCredentials.BadRegistrarIpAddressException;
@@ -31,10 +31,7 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
-import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.util.Base64;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,13 +61,8 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
 
   @BeforeEach
   void beforeEach() throws CertificateException {
-    String proxyEncoded =
-        Base64.getEncoder()
-            .encodeToString(
-                CertificateFactory.getInstance("X.509")
-                    .generateCertificate(new ByteArrayInputStream(GOOD_CERT.get().getBytes(UTF_8)))
-                    .getEncoded());
-    encodedCertString = Optional.of(proxyEncoded);
+    encodedCertString =
+        Optional.of(EppTestCase.encodeX509CertificateFromPemString(GOOD_CERT.get()));
   }
 
   @Override
@@ -127,12 +119,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   @Test
   void testFailure_incorrectClientCertificateHash() throws Exception {
     persistResource(getRegistrarBuilder().build());
-    String proxyEncoded =
-        Base64.getEncoder()
-            .encodeToString(
-                CertificateFactory.getInstance("X.509")
-                    .generateCertificate(new ByteArrayInputStream(BAD_CERT.get().getBytes(UTF_8)))
-                    .getEncoded());
+    String proxyEncoded = EppTestCase.encodeX509CertificateFromPemString(BAD_CERT.get());
     credentials =
         new TlsCredentials(
             true, BAD_CERT_HASH, Optional.of(proxyEncoded), GOOD_IP, certificateChecker);

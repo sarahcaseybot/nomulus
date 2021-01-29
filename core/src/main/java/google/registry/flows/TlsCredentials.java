@@ -156,13 +156,13 @@ public class TlsCredentials implements TransportCredentials {
           registrar.getClientId());
     } else {
       X509Certificate passedCert;
-      X509Certificate storedCert;
-      X509Certificate storedFailoverCert;
+      Optional<X509Certificate> storedCert;
+      Optional<X509Certificate> storedFailoverCert;
 
       try {
-        storedCert = stringToCert(registrar.getClientCertificate());
-        storedFailoverCert = stringToCert(registrar.getFailoverClientCertificate());
-        passedCert = encodedCertStringToCert(clientCertificate.get());
+        storedCert = deserializePemCert(registrar.getClientCertificate());
+        storedFailoverCert = deserializePemCert(registrar.getFailoverClientCertificate());
+        passedCert = decodeCertString(clientCertificate.get());
       } catch (Exception e) {
         // TODO(Sarahbot@): remove this catch once we know it's working
         logger.atWarning().log(
@@ -173,7 +173,8 @@ public class TlsCredentials implements TransportCredentials {
       }
 
       // Check if the certificate is equal to the one on file for the registrar.
-      if (passedCert.equals(storedCert) || passedCert.equals(storedFailoverCert)) {
+      if (passedCert.equals(storedCert.orElse(null))
+          || passedCert.equals(storedFailoverCert.orElse(null))) {
         // Check certificate for any requirement violations
         // TODO(Sarahbot@): Throw exceptions instead of just logging once requirement enforcement
         // begins
@@ -242,19 +243,20 @@ public class TlsCredentials implements TransportCredentials {
     }
   }
 
-  private X509Certificate stringToCert(Optional<String> certificateString)
+  // Converts a PEM formatted certificate string into an X509Certificate
+  private Optional<X509Certificate> deserializePemCert(Optional<String> certificateString)
       throws CertificateException {
     if (certificateString.isPresent()) {
       ByteArrayInputStream inputStream =
           new ByteArrayInputStream(certificateString.get().getBytes(UTF_8));
       CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-      return (X509Certificate) certificateFactory.generateCertificate(inputStream);
+      return Optional.of((X509Certificate) certificateFactory.generateCertificate(inputStream));
     }
-    return null;
+    return Optional.empty();
   }
 
-  private X509Certificate encodedCertStringToCert(String encodedCertString)
-      throws CertificateException {
+  // Decodes the string representation of an encoded certificate back into an X509Certificate
+  private X509Certificate decodeCertString(String encodedCertString) throws CertificateException {
     byte decodedCert[] = Base64.getDecoder().decode(encodedCertString);
     ByteArrayInputStream inputStream = new ByteArrayInputStream(decodedCert);
     CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");

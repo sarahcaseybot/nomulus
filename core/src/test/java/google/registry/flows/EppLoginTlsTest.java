@@ -18,7 +18,6 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
@@ -31,12 +30,9 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.SelfSignedCaCertificate;
-import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -98,14 +94,7 @@ class EppLoginTlsTest extends EppTestCase {
             .setClientCertificate(CertificateSamples.SAMPLE_CERT2, DateTime.now(UTC))
             .build());
     loggerToIntercept.addHandler(handler);
-    // How proxy converts to a string
-    encodedCertString =
-        Base64.getEncoder()
-            .encodeToString(
-                CertificateFactory.getInstance("X.509")
-                    .generateCertificate(
-                        new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT3.getBytes(UTF_8)))
-                    .getEncoded());
+    encodedCertString = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT3);
   }
 
   @Test
@@ -225,14 +214,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testCertificateDoesNotMeetRequirements_fails() throws Exception {
-    // How proxy converts to a string
-    String proxyEncoded =
-        Base64.getEncoder()
-            .encodeToString(
-                CertificateFactory.getInstance("X.509")
-                    .generateCertificate(
-                        new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
-                    .getEncoded());
+    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
     // SAMPLE_CERT has a validity period that is too long
     setCredentials(CertificateSamples.SAMPLE_CERT_HASH, proxyEncoded);
     persistResource(
@@ -265,8 +247,8 @@ class EppLoginTlsTest extends EppTestCase {
       PemObjectGenerator generator = new JcaMiscPEMGenerator(certificate);
       pw.writeObject(generator);
     }
-    // How proxy converts to a string
-    String proxyEncoded = Base64.getEncoder().encodeToString(certificate.getEncoded());
+
+    String proxyEncoded = encodeX509Certificate(certificate);
 
     // SAMPLE_CERT has a validity period that is too long
     setCredentials(null, proxyEncoded);
@@ -294,14 +276,7 @@ class EppLoginTlsTest extends EppTestCase {
   void testCertificateDoesNotMeetRequirementsInProduction_succeeds() throws Exception {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     // SAMPLE_CERT has a validity period that is too long
-    // How proxy converts to a string
-    String proxyEncoded =
-        Base64.getEncoder()
-            .encodeToString(
-                CertificateFactory.getInstance("X.509")
-                    .generateCertificate(
-                        new ByteArrayInputStream(CertificateSamples.SAMPLE_CERT.getBytes(UTF_8)))
-                    .getEncoded());
+    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
     setCredentials(null, proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
