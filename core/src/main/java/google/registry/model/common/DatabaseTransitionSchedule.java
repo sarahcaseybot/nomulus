@@ -87,15 +87,8 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
           .build(
               new CacheLoader<String, Optional<DatabaseTransitionSchedule>>() {
                 @Override
-                public Optional<DatabaseTransitionSchedule> load(String id) throws Exception {
-
-                  VKey<DatabaseTransitionSchedule> key =
-                      VKey.create(
-                          DatabaseTransitionSchedule.class,
-                          id,
-                          Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, id));
-
-                  return ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
+                public Optional<DatabaseTransitionSchedule> load(String id) {
+                  return DatabaseTransitionSchedule.get(id);
                 }
               });
 
@@ -116,11 +109,33 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
     return databaseTransitions.getValueAtTime(now);
   }
 
+  /** Returns the database transitions as a map of start time to primary database. */
   public ImmutableSortedMap<DateTime, PrimaryDatabase> getDatabaseTransitions() {
     return databaseTransitions.toValueMap();
   }
 
-  public static Optional<DatabaseTransitionSchedule> get(String id) {
+  /**
+   * Returns the current cached schedule for the given id.
+   *
+   * <p>WARNING: The schedule returned by this method could be up to 10 minutes out of date.
+   */
+  public static Optional<DatabaseTransitionSchedule> getCached(String id) {
     return CACHE.getUnchecked(id);
+  }
+
+  /** Returns the schedule for a given id. */
+  public static Optional<DatabaseTransitionSchedule> get(String id) {
+    VKey<DatabaseTransitionSchedule> key =
+        VKey.create(
+            DatabaseTransitionSchedule.class,
+            id,
+            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, id));
+
+    return ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s : %s", id, databaseTransitions.toValueMap());
   }
 }

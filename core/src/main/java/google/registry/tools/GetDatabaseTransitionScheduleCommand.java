@@ -37,7 +37,7 @@ final class GetDatabaseTransitionScheduleCommand implements CommandWithRemoteApi
               "A database transition schedule for %s does not exist",
               id);
 
-      System.out.println(schedule.getDatabaseTransitions());
+      System.out.println(schedule.toString());
     }
   }
 }

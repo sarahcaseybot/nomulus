@@ -28,7 +28,7 @@ import org.joda.time.DateTime;
 /** Command to update {@link DatabaseTransitionSchedule}. */
 @Parameters(
     separators = " =",
-    commandDescription = "Add a new entry to the database transition schedule.")
+    commandDescription = "Set the database transition schedule for an entity.")
 public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
 
   @Parameter(
@@ -40,17 +40,16 @@ public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
               + " <time>=<primary-database>[,<time>=<primary-database>]*")
   ImmutableSortedMap<DateTime, PrimaryDatabase> transitionSchedule;
 
-  @Parameter(names = "--schedule_id", description = "ID string for the schedule being updated")
-  private String scheduleId;
+  @Parameter(names = "--id", description = "ID string for the schedule being updated")
+  private String id;
 
   @Override
   protected void init() {
-    Optional<DatabaseTransitionSchedule> currentSchedule =
-        DatabaseTransitionSchedule.get(scheduleId);
+    Optional<DatabaseTransitionSchedule> currentSchedule = DatabaseTransitionSchedule.get(id);
 
     DatabaseTransitionSchedule newSchedule =
         DatabaseTransitionSchedule.create(
-            scheduleId,
+            id,
             TimedTransitionProperty.fromValueMap(
                 transitionSchedule, PrimaryDatabaseTransition.class));
 

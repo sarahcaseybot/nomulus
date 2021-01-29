@@ -46,7 +46,7 @@ public class UpdateDatabaseTransitionScheduleCommandTest
   void testSuccess_currentScheduleIsEmpty() throws Exception {
     assertThat(ofy().load().key(key).now()).isNull();
     runCommandForced(
-        "--schedule_id=test", String.format("--transition_schedule=%s=DATASTORE", START_OF_TIME));
+        "--id=test", String.format("--transition_schedule=%s=DATASTORE", START_OF_TIME));
     assertThat(DatabaseTransitionSchedule.get("test").get().getPrimaryDatabase(fakeClock.nowUtc()))
         .isEqualTo(PrimaryDatabase.DATASTORE);
     String changes = command.prompt();
@@ -68,7 +68,7 @@ public class UpdateDatabaseTransitionScheduleCommandTest
     persistResource(schedule);
     assertThat(DatabaseTransitionSchedule.get("test").get().getDatabaseTransitions()).hasSize(2);
     runCommandForced(
-        "--schedule_id=test",
+        "--id=test",
         String.format(
             "--transition_schedule=%s=DATASTORE,%s=CLOUD_SQL,%s=DATASTORE",
             START_OF_TIME, fakeClock.nowUtc().minusDays(1), fakeClock.nowUtc().plusDays(5)));
