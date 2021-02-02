@@ -25,6 +25,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
+import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,8 +47,11 @@ public class UpdateDatabaseTransitionScheduleCommandTest
   void testSuccess_currentScheduleIsEmpty() throws Exception {
     assertThat(ofy().load().key(key).now()).isNull();
     runCommandForced(
-        "--id=test", String.format("--transition_schedule=%s=DATASTORE", START_OF_TIME));
-    assertThat(DatabaseTransitionSchedule.get("test").get().getPrimaryDatabase(fakeClock.nowUtc()))
+        "--transition_id=TEST", String.format("--transition_schedule=%s=DATASTORE", START_OF_TIME));
+    assertThat(
+            DatabaseTransitionSchedule.get(TransitionId.TEST)
+                .get()
+                .getPrimaryDatabase(fakeClock.nowUtc()))
         .isEqualTo(PrimaryDatabase.DATASTORE);
     String changes = command.prompt();
     assertThat(changes).contains("Create DatabaseTransitionSchedule");
@@ -57,7 +61,7 @@ public class UpdateDatabaseTransitionScheduleCommandTest
   void testSuccess() throws Exception {
     DatabaseTransitionSchedule schedule =
         DatabaseTransitionSchedule.create(
-            "test",
+            TransitionId.TEST,
             TimedTransitionProperty.fromValueMap(
                 ImmutableSortedMap.of(
                     START_OF_TIME,
@@ -66,15 +70,17 @@ public class UpdateDatabaseTransitionScheduleCommandTest
                     PrimaryDatabase.CLOUD_SQL),
                 PrimaryDatabaseTransition.class));
     persistResource(schedule);
-    assertThat(DatabaseTransitionSchedule.get("test").get().getDatabaseTransitions()).hasSize(2);
+    assertThat(DatabaseTransitionSchedule.get(TransitionId.TEST).get().getDatabaseTransitions())
+        .hasSize(2);
     runCommandForced(
-        "--id=test",
+        "--transition_id=TEST",
         String.format(
             "--transition_schedule=%s=DATASTORE,%s=CLOUD_SQL,%s=DATASTORE",
             START_OF_TIME, fakeClock.nowUtc().minusDays(1), fakeClock.nowUtc().plusDays(5)));
-    assertThat(DatabaseTransitionSchedule.get("test").get().getDatabaseTransitions()).hasSize(3);
+    assertThat(DatabaseTransitionSchedule.get(TransitionId.TEST).get().getDatabaseTransitions())
+        .hasSize(3);
     assertThat(
-            DatabaseTransitionSchedule.get("test")
+            DatabaseTransitionSchedule.get(TransitionId.TEST)
                 .get()
                 .getPrimaryDatabase(fakeClock.nowUtc().plusDays(5)))
         .isEqualTo(PrimaryDatabase.DATASTORE);

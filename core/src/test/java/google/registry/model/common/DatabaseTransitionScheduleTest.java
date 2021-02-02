@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
+import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DatabaseTransitionSchedule}. */
@@ -35,10 +36,10 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create("testEntity", databaseTransitions);
+        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
 
-    assertThat(DatabaseTransitionSchedule.get("testEntity").get().databaseTransitions)
+    assertThat(DatabaseTransitionSchedule.get(TransitionId.TEST).get().databaseTransitions)
         .isEqualTo(databaseTransitions);
   }
 
@@ -48,7 +49,7 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
         IllegalArgumentException.class,
         () ->
             DatabaseTransitionSchedule.create(
-                "testEntity",
+                TransitionId.TEST,
                 TimedTransitionProperty.fromValueMap(
                     ImmutableSortedMap.of(fakeClock.nowUtc(), PrimaryDatabase.DATASTORE),
                     PrimaryDatabaseTransition.class)));
@@ -58,7 +59,7 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
   void testSuccess_getPrimaryDatabase() {
     DatabaseTransitionSchedule schedule =
         DatabaseTransitionSchedule.create(
-            "testEntity",
+            TransitionId.TEST,
             TimedTransitionProperty.fromValueMap(
                 ImmutableSortedMap.of(
                     START_OF_TIME,

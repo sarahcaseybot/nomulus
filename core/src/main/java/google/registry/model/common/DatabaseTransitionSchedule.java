@@ -47,8 +47,14 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
    * will always be Datastore.
    */
   public enum PrimaryDatabase {
-    DATASTORE,
-    CLOUD_SQL
+    CLOUD_SQL,
+    DATASTORE
+  }
+
+  /** The id of the transition schedule. */
+  public enum TransitionId {
+    TEST,
+    SMD
   }
 
   /**
@@ -72,7 +78,7 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
 
   @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
 
-  @Id String id;
+  @Id String transitionId;
 
   /** A property that tracks the primary database for a dual-read/dual-write database migration. */
   @Mapify(TimeMapper.class)
@@ -87,19 +93,19 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
           .build(
               new CacheLoader<String, Optional<DatabaseTransitionSchedule>>() {
                 @Override
-                public Optional<DatabaseTransitionSchedule> load(String id) {
-                  return DatabaseTransitionSchedule.get(id);
+                public Optional<DatabaseTransitionSchedule> load(String transitionId) {
+                  return DatabaseTransitionSchedule.get(TransitionId.valueOf(transitionId));
                 }
               });
 
   public static DatabaseTransitionSchedule create(
-      String id,
+      TransitionId transitionId,
       TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions) {
-    checkNotNull(id, "Id cannot be null");
+    checkNotNull(transitionId, "Id cannot be null");
     checkNotNull(databaseTransitions, "databaseTransitions cannot be null");
     databaseTransitions.checkValidity();
     DatabaseTransitionSchedule instance = new DatabaseTransitionSchedule();
-    instance.id = id;
+    instance.transitionId = transitionId.name();
     instance.databaseTransitions = databaseTransitions;
     return instance;
   }
@@ -124,18 +130,18 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
   }
 
   /** Returns the schedule for a given id. */
-  public static Optional<DatabaseTransitionSchedule> get(String id) {
+  public static Optional<DatabaseTransitionSchedule> get(TransitionId transitionId) {
     VKey<DatabaseTransitionSchedule> key =
         VKey.create(
             DatabaseTransitionSchedule.class,
-            id,
-            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, id));
+            transitionId,
+            Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, transitionId.name()));
 
     return ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
   }
 
   @Override
   public String toString() {
-    return String.format("%s : %s", id, databaseTransitions.toValueMap());
+    return String.format("%s : %s", transitionId, databaseTransitions.toValueMap());
   }
 }

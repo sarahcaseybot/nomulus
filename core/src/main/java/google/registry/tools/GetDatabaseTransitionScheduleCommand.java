@@ -19,13 +19,14 @@ import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.common.DatabaseTransitionSchedule;
+import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import java.util.List;
 
-/** Command to show the {@link DatabaseTransitionSchedule} for an entity. */
+/** Command to show the {@link DatabaseTransitionSchedule} for a transition id. */
 @Parameters(separators = " =", commandDescription = "Show database transition schedule")
 final class GetDatabaseTransitionScheduleCommand implements CommandWithRemoteApi {
 
-  @Parameter(description = "ID string for the schedule to get", required = true)
+  @Parameter(description = "Transition id string for the schedule to get", required = true)
   private List<String> mainParameters;
 
   @Override
@@ -33,7 +34,7 @@ final class GetDatabaseTransitionScheduleCommand implements CommandWithRemoteApi
     for (String id : mainParameters) {
       DatabaseTransitionSchedule schedule =
           checkArgumentPresent(
-              DatabaseTransitionSchedule.get(id),
+              DatabaseTransitionSchedule.get(TransitionId.valueOf(id)),
               "A database transition schedule for %s does not exist",
               id);
 

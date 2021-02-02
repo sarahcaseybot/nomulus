@@ -24,7 +24,9 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
+import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetDatabaseTransitionScheduleCommand} */
@@ -38,19 +40,21 @@ public class GetDatabaseTransitionScheduleCommandTest
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create("testEntity", databaseTransitions);
+        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
-    runCommand("testEntity");
+    runCommand("TEST");
+    assertStdoutIs("TEST : {1970-01-01T00:00:00.000Z=DATASTORE}\n");
   }
 
   @Test
   void testSuccess_multipleArguments() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions =
         TimedTransitionProperty.fromValueMap(
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create("testEntity", databaseTransitions);
+        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions2 =
         TimedTransitionProperty.fromValueMap(
@@ -61,18 +65,21 @@ public class GetDatabaseTransitionScheduleCommandTest
                 PrimaryDatabase.CLOUD_SQL),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule2 =
-        DatabaseTransitionSchedule.create("testEntity2", databaseTransitions2);
+        DatabaseTransitionSchedule.create(TransitionId.SMD, databaseTransitions2);
     ofyTm().transactNew(() -> ofyTm().put(schedule2));
-    runCommand("testEntity", "testEntity2");
+    runCommand("TEST", "SMD");
+    assertStdoutIs(
+        "TEST : {1970-01-01T00:00:00.000Z=DATASTORE}\n"
+            + "SMD : {1970-01-01T00:00:00.000Z=DATASTORE, 2020-10-01T00:00:00.000Z=CLOUD_SQL}\n");
   }
 
   @Test
   void testFailure_scheduleDoesNotExist() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> runCommand("test"));
+        assertThrows(IllegalArgumentException.class, () -> runCommand("TEST"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("A database transition schedule for test does not exist");
+        .contains("A database transition schedule for TEST does not exist");
   }
 
   @Test
@@ -87,12 +94,12 @@ public class GetDatabaseTransitionScheduleCommandTest
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create("testEntity", databaseTransitions);
+        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> runCommand("test", "testEntity"));
+        assertThrows(IllegalArgumentException.class, () -> runCommand("TEST", "SMD"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("A database transition schedule for test does not exist");
+        .contains("A database transition schedule for SMD does not exist");
   }
 }

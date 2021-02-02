@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
+import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.tools.params.TransitionListParameter.PrimaryDatabaseTransitions;
 import java.util.Optional;
@@ -28,7 +29,7 @@ import org.joda.time.DateTime;
 /** Command to update {@link DatabaseTransitionSchedule}. */
 @Parameters(
     separators = " =",
-    commandDescription = "Set the database transition schedule for an entity.")
+    commandDescription = "Set the database transition schedule for transition id.")
 public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
 
   @Parameter(
@@ -40,16 +41,19 @@ public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
               + " <time>=<primary-database>[,<time>=<primary-database>]*")
   ImmutableSortedMap<DateTime, PrimaryDatabase> transitionSchedule;
 
-  @Parameter(names = "--id", description = "ID string for the schedule being updated")
-  private String id;
+  @Parameter(
+      names = "--transition_id",
+      description = "Transition id string for the schedule being updated")
+  private TransitionId transitionId;
 
   @Override
   protected void init() {
-    Optional<DatabaseTransitionSchedule> currentSchedule = DatabaseTransitionSchedule.get(id);
+    Optional<DatabaseTransitionSchedule> currentSchedule =
+        DatabaseTransitionSchedule.get(transitionId);
 
     DatabaseTransitionSchedule newSchedule =
         DatabaseTransitionSchedule.create(
-            id,
+            transitionId,
             TimedTransitionProperty.fromValueMap(
                 transitionSchedule, PrimaryDatabaseTransition.class));
 
