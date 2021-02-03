@@ -185,6 +185,8 @@ public class TlsCredentials implements TransportCredentials {
         try {
           certificateChecker.validateCertificate(passedCert);
         } catch (InsecureCertificateException e) {
+          // TODO(Sarahbot@): Remove this if statement after March 1. After March 1, exception
+          // should be thrown in all environments.
           // throw exception in unit tests and Sandbox
           if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
               || RegistryEnvironment.get().equals(RegistryEnvironment.SANDBOX)
