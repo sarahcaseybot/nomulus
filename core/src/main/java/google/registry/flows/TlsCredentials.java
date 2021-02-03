@@ -65,6 +65,8 @@ import org.joda.time.DateTime;
 public class TlsCredentials implements TransportCredentials {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final DateTime CERT_ENFORCEMENT_START_TIME =
+      DateTime.parse("2021-03-01T16:00:00Z");
 
   private final boolean requireSslCertificates;
   private final Optional<String> clientCertificateHash;
@@ -190,7 +192,7 @@ public class TlsCredentials implements TransportCredentials {
           // throw exception in unit tests and Sandbox
           if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
               || RegistryEnvironment.get().equals(RegistryEnvironment.SANDBOX)
-              || clock.nowUtc().isAfter(DateTime.parse("2021-03-01T16:00:00Z"))) {
+              || clock.nowUtc().isAfter(CERT_ENFORCEMENT_START_TIME)) {
             throw new CertificateContainsSecurityViolationsException(e);
           }
           logger.atWarning().log(
