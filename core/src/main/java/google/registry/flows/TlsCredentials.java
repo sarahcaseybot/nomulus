@@ -34,6 +34,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.Clock;
+import google.registry.util.HttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
 import java.security.cert.CertificateException;
@@ -78,9 +79,9 @@ public class TlsCredentials implements TransportCredentials {
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
-      @Header("X-SSL-Certificate") Optional<String> clientCertificateHash,
-      @Header("X-SSL-Full-Certificate") Optional<String> clientCertificate,
-      @Header("X-Forwarded-For") Optional<String> clientAddress,
+      @Header(HttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
+      @Header(HttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
+      @Header(HttpHeaders.IP_ADDRESS) Optional<String> clientAddress,
       CertificateChecker certificateChecker,
       Clock clock) {
     this.requireSslCertificates = requireSslCertificates;
@@ -328,25 +329,25 @@ public class TlsCredentials implements TransportCredentials {
   public static final class EppTlsModule {
 
     @Provides
-    @Header("X-SSL-Certificate")
+    @Header(HttpHeaders.CERTIFICATE_HASH)
     static Optional<String> provideClientCertificateHash(HttpServletRequest req) {
       // Note: This header is actually required, we just want to handle its absence explicitly
       // by throwing an EPP exception rather than a generic Bad Request exception.
-      return extractOptionalHeader(req, "X-SSL-Certificate");
+      return extractOptionalHeader(req, HttpHeaders.CERTIFICATE_HASH);
     }
 
     @Provides
-    @Header("X-SSL-Full-Certificate")
+    @Header(HttpHeaders.FULL_CERTIFICATE)
     static Optional<String> provideClientCertificate(HttpServletRequest req) {
       // Note: This header is actually required, we just want to handle its absence explicitly
       // by throwing an EPP exception rather than a generic Bad Request exception.
-      return extractOptionalHeader(req, "X-SSL-Full-Certificate");
+      return extractOptionalHeader(req, HttpHeaders.FULL_CERTIFICATE);
     }
 
     @Provides
-    @Header("X-Forwarded-For")
-    static Optional<String> provideForwardedFor(HttpServletRequest req) {
-      return extractOptionalHeader(req, "X-Forwarded-For");
+    @Header(HttpHeaders.IP_ADDRESS)
+    static Optional<String> provideIpAddress(HttpServletRequest req) {
+      return extractOptionalHeader(req, HttpHeaders.IP_ADDRESS);
     }
   }
 }
