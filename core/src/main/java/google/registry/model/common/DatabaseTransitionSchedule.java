@@ -54,10 +54,10 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
 
   /** The id of the transition schedule. */
   public enum TransitionId {
+    /** The schedule for the migration of PremiumList and ReservedList. */
+    PREMIUM_AND_RESERVED_LIST,
     /** The schedule for the migration of the SignedMarkRevocationList entity. */
     SIGNED_MARK_REVOCATION_LIST,
-    /** Transition ID used for tests. */
-    TEST
   }
 
   /**

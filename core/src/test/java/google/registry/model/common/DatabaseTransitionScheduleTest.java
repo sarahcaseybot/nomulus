@@ -42,10 +42,14 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
+        DatabaseTransitionSchedule.create(
+            TransitionId.SIGNED_MARK_REVOCATION_LIST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
 
-    assertThat(DatabaseTransitionSchedule.get(TransitionId.TEST).get().databaseTransitions)
+    assertThat(
+            DatabaseTransitionSchedule.get(TransitionId.SIGNED_MARK_REVOCATION_LIST)
+                .get()
+                .databaseTransitions)
         .isEqualTo(databaseTransitions);
   }
 
@@ -55,7 +59,7 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
         IllegalArgumentException.class,
         () ->
             DatabaseTransitionSchedule.create(
-                TransitionId.TEST,
+                TransitionId.SIGNED_MARK_REVOCATION_LIST,
                 TimedTransitionProperty.fromValueMap(
                     ImmutableSortedMap.of(fakeClock.nowUtc(), PrimaryDatabase.DATASTORE),
                     PrimaryDatabaseTransition.class)));
@@ -65,7 +69,7 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
   void testSuccess_getPrimaryDatabase() {
     DatabaseTransitionSchedule schedule =
         DatabaseTransitionSchedule.create(
-            TransitionId.TEST,
+            TransitionId.SIGNED_MARK_REVOCATION_LIST,
             TimedTransitionProperty.fromValueMap(
                 ImmutableSortedMap.of(
                     START_OF_TIME,

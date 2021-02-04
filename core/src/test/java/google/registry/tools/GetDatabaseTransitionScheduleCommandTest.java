@@ -40,10 +40,11 @@ public class GetDatabaseTransitionScheduleCommandTest
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
+        DatabaseTransitionSchedule.create(
+            TransitionId.SIGNED_MARK_REVOCATION_LIST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
-    runCommand("TEST");
-    assertStdoutIs("TEST: {1970-01-01T00:00:00.000Z=DATASTORE}\n");
+    runCommand("SIGNED_MARK_REVOCATION_LIST");
+    assertStdoutIs("SIGNED_MARK_REVOCATION_LIST: {1970-01-01T00:00:00.000Z=DATASTORE}\n");
   }
 
   @Test
@@ -54,7 +55,8 @@ public class GetDatabaseTransitionScheduleCommandTest
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
+        DatabaseTransitionSchedule.create(
+            TransitionId.PREMIUM_AND_RESERVED_LIST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions2 =
         TimedTransitionProperty.fromValueMap(
@@ -68,9 +70,9 @@ public class GetDatabaseTransitionScheduleCommandTest
         DatabaseTransitionSchedule.create(
             TransitionId.SIGNED_MARK_REVOCATION_LIST, databaseTransitions2);
     ofyTm().transactNew(() -> ofyTm().put(schedule2));
-    runCommand("TEST", "SIGNED_MARK_REVOCATION_LIST");
+    runCommand("PREMIUM_AND_RESERVED_LIST", "SIGNED_MARK_REVOCATION_LIST");
     assertStdoutIs(
-        "TEST: {1970-01-01T00:00:00.000Z=DATASTORE}\n"
+        "PREMIUM_AND_RESERVED_LIST: {1970-01-01T00:00:00.000Z=DATASTORE}\n"
             + "SIGNED_MARK_REVOCATION_LIST: {1970-01-01T00:00:00.000Z=DATASTORE,"
             + " 2020-10-01T00:00:00.000Z=CLOUD_SQL}\n");
   }
@@ -78,10 +80,11 @@ public class GetDatabaseTransitionScheduleCommandTest
   @Test
   void testFailure_scheduleDoesNotExist() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> runCommand("TEST"));
+        assertThrows(
+            IllegalArgumentException.class, () -> runCommand("SIGNED_MARK_REVOCATION_LIST"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("A database transition schedule for TEST does not exist");
+        .contains("A database transition schedule for SIGNED_MARK_REVOCATION_LIST does not exist");
   }
 
   @Test
@@ -96,12 +99,13 @@ public class GetDatabaseTransitionScheduleCommandTest
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
+        DatabaseTransitionSchedule.create(
+            TransitionId.PREMIUM_AND_RESERVED_LIST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommand("TEST", "SIGNED_MARK_REVOCATION_LIST"));
+            () -> runCommand("PREMIUM_AND_RESERVED_LIST", "SIGNED_MARK_REVOCATION_LIST"));
     assertThat(thrown)
         .hasMessageThat()
         .contains("A database transition schedule for SIGNED_MARK_REVOCATION_LIST does not exist");
