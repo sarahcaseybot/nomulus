@@ -33,6 +33,9 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
+import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.ReservedList;
+import google.registry.model.smd.SignedMarkRevocationList;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import java.util.Optional;
@@ -54,9 +57,9 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
 
   /** The id of the transition schedule. */
   public enum TransitionId {
-    /** The schedule for the migration of PremiumList and ReservedList. */
+    /** The schedule for the migration of {@link PremiumList} and {@link ReservedList}. */
     PREMIUM_AND_RESERVED_LIST,
-    /** The schedule for the migration of the SignedMarkRevocationList entity. */
+    /** The schedule for the migration of the {@link SignedMarkRevocationList} entity. */
     SIGNED_MARK_REVOCATION_LIST,
   }
 
