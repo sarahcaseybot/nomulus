@@ -83,8 +83,8 @@ public class TlsCredentials implements TransportCredentials {
       @Header(ProxyHttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
       @Header(ProxyHttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
       @Header(HttpHeaders.X_FORWARDED_FOR) Optional<String> clientAddress,
-    CertificateChecker certificateChecker,
-    Clock clock) {
+      CertificateChecker certificateChecker,
+      Clock clock) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
     this.clientCertificate = clientCertificate;
