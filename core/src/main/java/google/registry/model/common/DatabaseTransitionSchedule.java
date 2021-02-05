@@ -135,8 +135,8 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
    *
    * <p>WARNING: The schedule returned by this method could be up to 10 minutes out of date.
    */
-  public static Optional<DatabaseTransitionSchedule> getCached(String id) {
-    return CACHE.getUnchecked(id);
+  public static Optional<DatabaseTransitionSchedule> getCached(TransitionId id) {
+    return CACHE.getUnchecked(id.name());
   }
 
   /** Returns the schedule for a given id. */
