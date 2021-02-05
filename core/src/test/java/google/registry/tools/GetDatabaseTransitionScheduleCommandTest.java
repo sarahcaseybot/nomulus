@@ -26,12 +26,25 @@ import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
 import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
+import google.registry.model.ofy.Ofy;
+import google.registry.testing.FakeClock;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GetDatabaseTransitionScheduleCommand} */
 public class GetDatabaseTransitionScheduleCommandTest
     extends CommandTestCase<GetDatabaseTransitionScheduleCommand> {
+
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+
+  @BeforeEach
+  void beforeEach() {
+    inject.setStaticField(
+        Ofy.class, "clock", new FakeClock(DateTime.parse("1984-12-21T06:07:08.789Z")));
+  }
 
   @Test
   void testSuccess() throws Exception {
@@ -44,7 +57,9 @@ public class GetDatabaseTransitionScheduleCommandTest
             TransitionId.SIGNED_MARK_REVOCATION_LIST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     runCommand("SIGNED_MARK_REVOCATION_LIST");
-    assertStdoutIs("SIGNED_MARK_REVOCATION_LIST: {1970-01-01T00:00:00.000Z=DATASTORE}\n");
+    assertStdoutIs(
+        "SIGNED_MARK_REVOCATION_LIST(last updated at 1984-12-21T06:07:08.789Z):"
+            + " {1970-01-01T00:00:00.000Z=DATASTORE}\n");
   }
 
   @Test
@@ -55,8 +70,7 @@ public class GetDatabaseTransitionScheduleCommandTest
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(
-            TransitionId.PREMIUM_AND_RESERVED_LIST, databaseTransitions);
+        DatabaseTransitionSchedule.create(TransitionId.DOMAIN_LABEL_LISTS, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions2 =
         TimedTransitionProperty.fromValueMap(
@@ -70,11 +84,12 @@ public class GetDatabaseTransitionScheduleCommandTest
         DatabaseTransitionSchedule.create(
             TransitionId.SIGNED_MARK_REVOCATION_LIST, databaseTransitions2);
     ofyTm().transactNew(() -> ofyTm().put(schedule2));
-    runCommand("PREMIUM_AND_RESERVED_LIST", "SIGNED_MARK_REVOCATION_LIST");
+    runCommand("DOMAIN_LABEL_LISTS", "SIGNED_MARK_REVOCATION_LIST");
     assertStdoutIs(
-        "PREMIUM_AND_RESERVED_LIST: {1970-01-01T00:00:00.000Z=DATASTORE}\n"
-            + "SIGNED_MARK_REVOCATION_LIST: {1970-01-01T00:00:00.000Z=DATASTORE,"
-            + " 2020-10-01T00:00:00.000Z=CLOUD_SQL}\n");
+        "DOMAIN_LABEL_LISTS(last updated at 1984-12-21T06:07:08.789Z):"
+            + " {1970-01-01T00:00:00.000Z=DATASTORE}\n"
+            + "SIGNED_MARK_REVOCATION_LIST(last updated at 1984-12-21T06:07:08.789Z):"
+            + " {1970-01-01T00:00:00.000Z=DATASTORE, 2020-10-01T00:00:00.000Z=CLOUD_SQL}\n");
   }
 
   @Test
@@ -99,13 +114,12 @@ public class GetDatabaseTransitionScheduleCommandTest
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(
-            TransitionId.PREMIUM_AND_RESERVED_LIST, databaseTransitions);
+        DatabaseTransitionSchedule.create(TransitionId.DOMAIN_LABEL_LISTS, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommand("PREMIUM_AND_RESERVED_LIST", "SIGNED_MARK_REVOCATION_LIST"));
+            () -> runCommand("DOMAIN_LABEL_LISTS", "SIGNED_MARK_REVOCATION_LIST"));
     assertThat(thrown)
         .hasMessageThat()
         .contains("A database transition schedule for SIGNED_MARK_REVOCATION_LIST does not exist");

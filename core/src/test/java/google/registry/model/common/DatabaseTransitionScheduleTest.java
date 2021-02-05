@@ -24,16 +24,11 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
 import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
-import google.registry.model.ofy.DatastoreTransactionManager;
-import google.registry.model.ofy.Ofy;
-import google.registry.persistence.transaction.TransactionManager;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DatabaseTransitionSchedule}. */
 public class DatabaseTransitionScheduleTest extends EntityTestCase {
-
-  private final TransactionManager tm = new DatastoreTransactionManager(new Ofy(fakeClock));
 
   @Test
   void testSuccess_persistence() {
@@ -77,8 +72,8 @@ public class DatabaseTransitionScheduleTest extends EntityTestCase {
                     fakeClock.nowUtc().plusDays(1),
                     PrimaryDatabase.CLOUD_SQL),
                 PrimaryDatabaseTransition.class));
-    assertThat(tm.transact(schedule::getPrimaryDatabase)).isEqualTo(PrimaryDatabase.DATASTORE);
+    assertThat(ofyTm().transact(schedule::getPrimaryDatabase)).isEqualTo(PrimaryDatabase.DATASTORE);
     fakeClock.advanceBy(Duration.standardDays(5));
-    assertThat(tm.transact(schedule::getPrimaryDatabase)).isEqualTo(PrimaryDatabase.CLOUD_SQL);
+    assertThat(ofyTm().transact(schedule::getPrimaryDatabase)).isEqualTo(PrimaryDatabase.CLOUD_SQL);
   }
 }

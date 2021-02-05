@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -52,7 +52,8 @@ public class SetDatabaseTransitionScheduleCommandTest
         "--transition_id=SIGNED_MARK_REVOCATION_LIST",
         "--transition_schedule=1970-01-01T00:00:00.000Z=DATASTORE");
     assertThat(
-            tm().transact(
+            ofyTm()
+                .transact(
                     () ->
                         DatabaseTransitionSchedule.get(TransitionId.SIGNED_MARK_REVOCATION_LIST)
                             .get()
@@ -69,11 +70,10 @@ public class SetDatabaseTransitionScheduleCommandTest
             PrimaryDatabase.DATASTORE,
             fakeClock.nowUtc().minusDays(1),
             PrimaryDatabase.CLOUD_SQL);
-    DatabaseTransitionSchedule schedule =
+    persistResource(
         DatabaseTransitionSchedule.create(
             TransitionId.SIGNED_MARK_REVOCATION_LIST,
-            TimedTransitionProperty.fromValueMap(transitionMap, PrimaryDatabaseTransition.class));
-    persistResource(schedule);
+            TimedTransitionProperty.fromValueMap(transitionMap, PrimaryDatabaseTransition.class)));
     assertThat(
             DatabaseTransitionSchedule.get(TransitionId.SIGNED_MARK_REVOCATION_LIST)
                 .get()
@@ -83,23 +83,29 @@ public class SetDatabaseTransitionScheduleCommandTest
         "--transition_id=SIGNED_MARK_REVOCATION_LIST",
         "--transition_schedule=1970-01-01T00:00:00.000Z=DATASTORE,2020-11-30T00:00:00.000Z=CLOUD_SQL,2020-12-06T00:00:00.000Z=DATASTORE");
     ImmutableSortedMap<DateTime, PrimaryDatabase> retrievedTransitionMap =
-        tm().transact(
+        ofyTm()
+            .transact(
                 () ->
                     DatabaseTransitionSchedule.get(TransitionId.SIGNED_MARK_REVOCATION_LIST)
                         .get()
                         .getDatabaseTransitions());
     assertThat(retrievedTransitionMap)
-        .containsEntry(fakeClock.nowUtc().plusDays(5), PrimaryDatabase.DATASTORE);
-    assertThat(retrievedTransitionMap).hasSize(3);
+        .containsExactly(
+            START_OF_TIME,
+            PrimaryDatabase.DATASTORE,
+            fakeClock.nowUtc().minusDays(1),
+            PrimaryDatabase.CLOUD_SQL,
+            fakeClock.nowUtc().plusDays(5),
+            PrimaryDatabase.DATASTORE);
     fakeClock.advanceBy(Duration.standardDays(5));
     assertThat(
-            tm().transact(
+            ofyTm()
+                .transact(
                     () ->
                         DatabaseTransitionSchedule.get(TransitionId.SIGNED_MARK_REVOCATION_LIST)
                             .get()
                             .getPrimaryDatabase()))
         .isEqualTo(PrimaryDatabase.DATASTORE);
-    String changes = command.prompt();
-    assertThat(changes).contains("Update DatabaseTransitionSchedule");
+    assertThat(command.prompt()).contains("Update DatabaseTransitionSchedule");
   }
 }

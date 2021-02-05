@@ -31,6 +31,7 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.registry.label.PremiumList;
@@ -58,7 +59,7 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
   /** The id of the transition schedule. */
   public enum TransitionId {
     /** The schedule for the migration of {@link PremiumList} and {@link ReservedList}. */
-    PREMIUM_AND_RESERVED_LIST,
+    DOMAIN_LABEL_LISTS,
     /** The schedule for the migration of the {@link SignedMarkRevocationList} entity. */
     SIGNED_MARK_REVOCATION_LIST,
   }
@@ -85,6 +86,9 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
   @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
 
   @Id String transitionId;
+
+  /** An automatically managed timestamp of when this schedule was last written to Datastore. */
+  UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
   /** A property that tracks the primary database for a dual-read/dual-write database migration. */
   @Mapify(TimeMapper.class)
@@ -148,6 +152,8 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
 
   @Override
   public String toString() {
-    return String.format("%s: %s", transitionId, databaseTransitions.toValueMap());
+    return String.format(
+        "%s(last updated at %s): %s",
+        transitionId, lastUpdateTime.getTimestamp(), databaseTransitions.toValueMap());
   }
 }

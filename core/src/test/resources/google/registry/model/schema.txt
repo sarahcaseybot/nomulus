@@ -81,6 +81,7 @@ class google.registry.model.common.Cursor {
 class google.registry.model.common.DatabaseTransitionSchedule {
   @Id java.lang.String transitionId;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  google.registry.model.UpdateAutoTimestamp lastUpdateTime;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.common.DatabaseTransitionSchedule$PrimaryDatabase, google.registry.model.common.DatabaseTransitionSchedule$PrimaryDatabaseTransition> databaseTransitions;
 }
 enum google.registry.model.common.DatabaseTransitionSchedule$PrimaryDatabase {
