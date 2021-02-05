@@ -14,6 +14,8 @@
 
 package google.registry.util;
 
+import com.google.common.net.HttpHeaders;
+
 /** Utility class of HTTP header names used for HTTP calls between Nomulus and the proxy. */
 public final class ProxyHttpHeaders {
 
@@ -38,6 +40,9 @@ public final class ProxyHttpHeaders {
    * HTTP header name passed from Nomulus to proxy to indicate that an EPP session should be closed.
    */
   public static final String EPP_SESSION = "Epp-Session";
+
+  /** HTTP header name used to pass the client IP address from the proxy to Nomulus. */
+  public static final String IP_ADDRESS = HttpHeaders.X_FORWARDED_FOR;
 
   private ProxyHttpHeaders() {}
 }

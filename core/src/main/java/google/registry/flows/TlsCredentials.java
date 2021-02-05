@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.HostAndPort;
-import com.google.common.net.HttpHeaders;
 import com.google.common.net.InetAddresses;
 import dagger.Module;
 import dagger.Provides;
@@ -82,7 +81,7 @@ public class TlsCredentials implements TransportCredentials {
       @Config("requireSslCertificates") boolean requireSslCertificates,
       @Header(ProxyHttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
       @Header(ProxyHttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
-      @Header(HttpHeaders.X_FORWARDED_FOR) Optional<String> clientAddress,
+      @Header(ProxyHttpHeaders.IP_ADDRESS) Optional<String> clientAddress,
       CertificateChecker certificateChecker,
       Clock clock) {
     this.requireSslCertificates = requireSslCertificates;
@@ -346,9 +345,9 @@ public class TlsCredentials implements TransportCredentials {
     }
 
     @Provides
-    @Header(HttpHeaders.X_FORWARDED_FOR)
+    @Header(ProxyHttpHeaders.IP_ADDRESS)
     static Optional<String> provideIpAddress(HttpServletRequest req) {
-      return extractOptionalHeader(req, HttpHeaders.X_FORWARDED_FOR);
+      return extractOptionalHeader(req, ProxyHttpHeaders.IP_ADDRESS);
     }
   }
 }

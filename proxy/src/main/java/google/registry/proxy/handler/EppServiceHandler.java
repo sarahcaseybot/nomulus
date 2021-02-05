@@ -21,7 +21,6 @@ import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_
 import static google.registry.util.X509Utils.getCertificateHash;
 
 import com.google.common.flogger.FluentLogger;
-import com.google.common.net.HttpHeaders;
 import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.util.ProxyHttpHeaders;
 import io.netty.buffer.ByteBuf;
@@ -127,7 +126,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
     request
         .headers()
         .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
-        .set(HttpHeaders.X_FORWARDED_FOR, clientAddress)
+        .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
         .set(HttpHeaderNames.CONTENT_TYPE, EPP_CONTENT_TYPE)
         .set(HttpHeaderNames.ACCEPT, EPP_CONTENT_TYPE);
     if (!isLoggedIn) {
