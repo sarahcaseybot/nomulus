@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -124,7 +125,7 @@ public class TestUtils {
     request
         .headers()
         .set("authorization", "Bearer " + accessToken)
-        .set("content-type", "text/plain")
+        .set(HttpHeaderNames.CONTENT_TYPE, "text/plain")
         .set("accept", "text/plain");
     return request;
   }
@@ -141,7 +142,7 @@ public class TestUtils {
     request
         .headers()
         .set("authorization", "Bearer " + accessToken)
-        .set("content-type", "application/epp+xml")
+        .set(HttpHeaderNames.CONTENT_TYPE, "application/epp+xml")
         .set("accept", "application/epp+xml")
         .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
         .set(HttpHeaders.X_FORWARDED_FOR, clientAddress);
@@ -168,14 +169,14 @@ public class TestUtils {
 
   public static FullHttpResponse makeWhoisHttpResponse(String content, HttpResponseStatus status) {
     FullHttpResponse response = makeHttpResponse(content, status);
-    response.headers().set("content-type", "text/plain");
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
     return response;
   }
 
   public static FullHttpResponse makeEppHttpResponse(
       String content, HttpResponseStatus status, Cookie... cookies) {
     FullHttpResponse response = makeHttpResponse(content, status);
-    response.headers().set("content-type", "application/epp+xml");
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/epp+xml");
     for (Cookie cookie : cookies) {
       response.headers().add("set-cookie", ServerCookieEncoder.STRICT.encode(cookie));
     }
