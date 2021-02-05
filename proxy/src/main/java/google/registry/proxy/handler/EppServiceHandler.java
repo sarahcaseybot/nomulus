@@ -21,8 +21,9 @@ import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_
 import static google.registry.util.X509Utils.getCertificateHash;
 
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.HttpHeaders;
 import google.registry.proxy.metric.FrontendMetrics;
-import google.registry.util.HttpHeaders;
+import google.registry.util.ProxyHttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -125,8 +126,8 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
     FullHttpRequest request = super.decodeFullHttpRequest(byteBuf);
     request
         .headers()
-        .set(HttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
-        .set(HttpHeaders.IP_ADDRESS, clientAddress)
+        .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
+        .set(HttpHeaders.X_FORWARDED_FOR, clientAddress)
         .set(HttpHeaderNames.CONTENT_TYPE, EPP_CONTENT_TYPE)
         .set(HttpHeaderNames.ACCEPT, EPP_CONTENT_TYPE);
     if (!isLoggedIn) {
@@ -134,7 +135,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
         request
             .headers()
             .set(
-                HttpHeaders.FULL_CERTIFICATE,
+                ProxyHttpHeaders.FULL_CERTIFICATE,
                 Base64.getEncoder().encodeToString(sslClientCertificate.getEncoded()));
       } catch (CertificateEncodingException e) {
         throw new RuntimeException("Cannot encode client certificate", e);
@@ -148,8 +149,8 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
       throws Exception {
     checkArgument(msg instanceof HttpResponse);
     HttpResponse response = (HttpResponse) msg;
-    String sessionAliveValue = response.headers().get(HttpHeaders.EPP_SESSION);
-    String loginValue = response.headers().get(HttpHeaders.LOGGED_IN);
+    String sessionAliveValue = response.headers().get(ProxyHttpHeaders.EPP_SESSION);
+    String loginValue = response.headers().get(ProxyHttpHeaders.LOGGED_IN);
     if (sessionAliveValue != null && sessionAliveValue.equals("close")) {
       promise.addListener(ChannelFutureListener.CLOSE);
     }

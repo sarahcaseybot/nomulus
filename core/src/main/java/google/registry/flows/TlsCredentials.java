@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.HostAndPort;
+import com.google.common.net.HttpHeaders;
 import com.google.common.net.InetAddresses;
 import dagger.Module;
 import dagger.Provides;
@@ -34,7 +35,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.Clock;
-import google.registry.util.HttpHeaders;
+import google.registry.util.ProxyHttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
 import java.security.cert.CertificateException;
@@ -79,11 +80,11 @@ public class TlsCredentials implements TransportCredentials {
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
-      @Header(HttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
-      @Header(HttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
-      @Header(HttpHeaders.IP_ADDRESS) Optional<String> clientAddress,
-      CertificateChecker certificateChecker,
-      Clock clock) {
+      @Header(ProxyHttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
+      @Header(ProxyHttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
+      @Header(HttpHeaders.X_FORWARDED_FOR) Optional<String> clientAddress,
+    CertificateChecker certificateChecker,
+    Clock clock) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
     this.clientCertificate = clientCertificate;
@@ -329,25 +330,25 @@ public class TlsCredentials implements TransportCredentials {
   public static final class EppTlsModule {
 
     @Provides
-    @Header(HttpHeaders.CERTIFICATE_HASH)
+    @Header(ProxyHttpHeaders.CERTIFICATE_HASH)
     static Optional<String> provideClientCertificateHash(HttpServletRequest req) {
       // Note: This header is actually required, we just want to handle its absence explicitly
       // by throwing an EPP exception rather than a generic Bad Request exception.
-      return extractOptionalHeader(req, HttpHeaders.CERTIFICATE_HASH);
+      return extractOptionalHeader(req, ProxyHttpHeaders.CERTIFICATE_HASH);
     }
 
     @Provides
-    @Header(HttpHeaders.FULL_CERTIFICATE)
+    @Header(ProxyHttpHeaders.FULL_CERTIFICATE)
     static Optional<String> provideClientCertificate(HttpServletRequest req) {
       // Note: This header is actually required, we just want to handle its absence explicitly
       // by throwing an EPP exception rather than a generic Bad Request exception.
-      return extractOptionalHeader(req, HttpHeaders.FULL_CERTIFICATE);
+      return extractOptionalHeader(req, ProxyHttpHeaders.FULL_CERTIFICATE);
     }
 
     @Provides
-    @Header(HttpHeaders.IP_ADDRESS)
+    @Header(HttpHeaders.X_FORWARDED_FOR)
     static Optional<String> provideIpAddress(HttpServletRequest req) {
-      return extractOptionalHeader(req, HttpHeaders.IP_ADDRESS);
+      return extractOptionalHeader(req, HttpHeaders.X_FORWARDED_FOR);
     }
   }
 }

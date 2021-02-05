@@ -17,7 +17,8 @@ package google.registry.proxy;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import google.registry.util.HttpHeaders;
+import com.google.common.net.HttpHeaders;
+import google.registry.util.ProxyHttpHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -142,8 +143,8 @@ public class TestUtils {
         .set("authorization", "Bearer " + accessToken)
         .set("content-type", "application/epp+xml")
         .set("accept", "application/epp+xml")
-        .set(HttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
-        .set(HttpHeaders.IP_ADDRESS, clientAddress);
+        .set(ProxyHttpHeaders.CERTIFICATE_HASH, sslClientCertificateHash)
+        .set(HttpHeaders.X_FORWARDED_FOR, clientAddress);
     if (cookies.length != 0) {
       request.headers().set("cookie", ClientCookieEncoder.STRICT.encode(cookies));
     }

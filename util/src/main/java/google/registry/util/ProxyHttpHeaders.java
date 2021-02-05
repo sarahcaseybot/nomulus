@@ -14,28 +14,30 @@
 
 package google.registry.util;
 
-/** Utility class of HTTP header names. */
-public final class HttpHeaders {
+/** Utility class of HTTP header names used for HTTP calls between Nomulus and the proxy. */
+public final class ProxyHttpHeaders {
 
   /**
-   * Header used to pass a full SSL certificate from the proxy to the backend.
+   * HTTP header name used to pass a full SSL certificate from the proxy to Nomulus.
    *
    * <p>This header contains the SSL certificate encoded to a string. It is used to pass the client
-   * certificate used for login to the backend for validation.
+   * certificate used for login to Nomulus for validation.
    */
   public static final String FULL_CERTIFICATE = "X-SSL-Full-Certificate";
 
-  /** Header used to pass the certificate hash from the proxy to the backend. */
+  /** HTTP header name used to pass the certificate hash from the proxy to Nomulus. */
   public static final String CERTIFICATE_HASH = "X-SSL-Certificate";
 
-  /** Header used to pass the client IP address from the proxy to the backend. */
-  public static final String IP_ADDRESS = "X-Forwarded-For";
-
-  /** Header passed from backend to proxy to indicate that a client has successfully logged in. */
+  /**
+   * HTTP header name passed from Nomulus to proxy to indicate that a client has successfully logged
+   * in.
+   */
   public static final String LOGGED_IN = "Logged-In";
 
-  /** Header passed from backend to proxy to indicate that an EPP session should be closed. */
+  /**
+   * HTTP header name passed from Nomulus to proxy to indicate that an EPP session should be closed.
+   */
   public static final String EPP_SESSION = "Epp-Session";
 
-  private HttpHeaders() {}
+  private ProxyHttpHeaders() {}
 }
