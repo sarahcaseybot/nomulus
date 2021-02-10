@@ -159,7 +159,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     SignedMarkRevocationList list2 =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(list2));
+    jpaTm().transact(() -> jpaTm().put(list2));
     RuntimeException thrown =
         assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
     assertThat(thrown)
@@ -179,7 +179,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     SignedMarkRevocationList list2 =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(list2));
+    jpaTm().transact(() -> jpaTm().put(list2));
     RuntimeException thrown =
         assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
     assertThat(thrown)
@@ -200,7 +200,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     SignedMarkRevocationList list2 =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(list2));
+    jpaTm().transact(() -> jpaTm().put(list2));
     SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
     assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list2, "revisionId");
   }
@@ -216,7 +216,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
         assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Signed mark revocation list in secondary database is empty.");
+        .contains("Signed mark revocation list in Cloud SQL is empty.");
   }
 
   @TestOfyAndSql
@@ -225,11 +225,11 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(list));
+    jpaTm().transact(() -> jpaTm().put(list));
     RuntimeException thrown =
         assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Signed mark revocation list in secondary database is empty.");
+        .contains("Signed mark revocation list in Datastore is empty.");
   }
 }
