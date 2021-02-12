@@ -155,7 +155,7 @@ public class SignedMarkRevocationListTest {
                     .persist(SignedMarkRevocationList.create(clock.nowUtc(), revokes.build())));
     RuntimeException thrown =
         assertThrows(RuntimeException.class, () -> SignedMarkRevocationList.get());
-    assertThat(thrown).hasMessageThat().contains("Unequal SM revocation lists detected:");
+    assertThat(thrown).hasMessageThat().contains("Unequal SignedMarkRevocationList detected:");
   }
 
   @Test

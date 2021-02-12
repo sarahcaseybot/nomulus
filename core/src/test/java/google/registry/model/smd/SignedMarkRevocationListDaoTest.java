@@ -217,7 +217,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .contains(
-            "Signed mark revocation list in Cloud SQL is empty while it is not empty in the"
+            "SignedMarkRevocationList in Cloud SQL is empty while it is not empty in the"
                 + " primary database.");
   }
 
@@ -233,7 +233,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .contains(
-            "Signed mark revocation list in Datastore is empty while it is not empty in the"
+            "SignedMarkRevocationList in Datastore is empty while it is not empty in the"
                 + " primary database.");
   }
 }

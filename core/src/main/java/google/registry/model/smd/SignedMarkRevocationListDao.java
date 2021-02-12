@@ -66,13 +66,14 @@ public class SignedMarkRevocationListDao {
     if (!primaryList.isPresent()) {
       throw new IllegalStateException(
           String.format(
-              "Sm revocation list not found in the primary database (%s).",
+              "SignedMarkRevocationList not found in the primary database (%s).",
               primaryDatabase.name()));
     }
     suppressExceptionUnlessInTest(
         () -> loadAndCompare(primaryDatabase, primaryList.get()),
         String.format(
-            "Error loading and comparing the sm revocation list from the secondary database (%s).",
+            "Error loading and comparing the SignedMarkRevocationList from the secondary database"
+                + " (%s).",
             primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore"));
     return primaryList.get();
   }
@@ -92,14 +93,15 @@ public class SignedMarkRevocationListDao {
         if (diff.entriesDiffering().size() > 10) {
           String message =
               String.format(
-                  "Unequal SM revocation lists detected, %s list with revision id"
+                  "Unequal SignedMarkRevocationList detected, %s list with revision id"
                       + " %d has %d different records than the current primary database list.",
                   primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore",
                   secondaryList.get().revisionId,
                   diff.entriesDiffering().size());
           throw new IllegalStateException(message);
         } else {
-          StringBuilder diffMessage = new StringBuilder("Unequal SM revocation lists detected:\n");
+          StringBuilder diffMessage =
+              new StringBuilder("Unequal SignedMarkRevocationList detected:\n");
           diff.entriesDiffering()
               .forEach(
                   (label, valueDiff) ->
@@ -117,7 +119,7 @@ public class SignedMarkRevocationListDao {
       if (primaryList.size() != 0) {
         throw new IllegalStateException(
             String.format(
-                "Signed mark revocation list in %s is empty while it is not empty in the primary"
+                "SignedMarkRevocationList in %s is empty while it is not empty in the primary"
                     + " database.",
                 primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore"));
       }
