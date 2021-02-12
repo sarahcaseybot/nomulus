@@ -161,7 +161,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
     jpaTm().transact(() -> jpaTm().put(list2));
     RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
+        assertThrows(RuntimeException.class, SignedMarkRevocationListDao::load);
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -181,7 +181,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
     jpaTm().transact(() -> jpaTm().put(list2));
     RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
+        assertThrows(RuntimeException.class, SignedMarkRevocationListDao::load);
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -213,10 +213,12 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     SignedMarkRevocationListDao.save(list);
     jpaTm().transact(() -> jpaTm().delete(list));
     RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
+        assertThrows(RuntimeException.class, SignedMarkRevocationListDao::load);
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Signed mark revocation list in Cloud SQL is empty.");
+        .contains(
+            "Signed mark revocation list in Cloud SQL is empty while it is not empty in the"
+                + " primary database.");
   }
 
   @TestOfyAndSql
@@ -227,9 +229,11 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
     jpaTm().transact(() -> jpaTm().put(list));
     RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
+        assertThrows(RuntimeException.class, SignedMarkRevocationListDao::load);
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Signed mark revocation list in Datastore is empty.");
+        .contains(
+            "Signed mark revocation list in Datastore is empty while it is not empty in the"
+                + " primary database.");
   }
 }

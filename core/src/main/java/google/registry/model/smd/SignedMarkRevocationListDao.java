@@ -65,11 +65,15 @@ public class SignedMarkRevocationListDao {
         primaryDatabase.equals(DATASTORE) ? loadFromDatastore() : loadFromCloudSql();
     if (!primaryList.isPresent()) {
       throw new IllegalStateException(
-          String.format("List not found in %s.", primaryDatabase.name()));
+          String.format(
+              "Sm revocation list not found in the primary database (%s).",
+              primaryDatabase.name()));
     }
     suppressExceptionUnlessInTest(
         () -> loadAndCompare(primaryDatabase, primaryList.get()),
-        "Error loading and comparing the list from the secondary database.");
+        String.format(
+            "Error loading and comparing the sm revocation list from the secondary database (%s).",
+            primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore"));
     return primaryList.get();
   }
 
@@ -90,7 +94,7 @@ public class SignedMarkRevocationListDao {
               String.format(
                   "Unequal SM revocation lists detected, %s list with revision id"
                       + " %d has %d different records than the current primary database list.",
-                  primaryDatabase.name(),
+                  primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore",
                   secondaryList.get().revisionId,
                   diff.entriesDiffering().size());
           throw new IllegalStateException(message);
@@ -113,7 +117,8 @@ public class SignedMarkRevocationListDao {
       if (primaryList.size() != 0) {
         throw new IllegalStateException(
             String.format(
-                "Signed mark revocation list in %s is empty.",
+                "Signed mark revocation list in %s is empty while it is not empty in the primary"
+                    + " database.",
                 primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore"));
       }
     }
@@ -134,7 +139,7 @@ public class SignedMarkRevocationListDao {
                 revokes.putAll(shard.revokes);
                 checkState(
                     creationTime.equals(shard.creationTime),
-                    "Inconsistent creation times: %s vs. %s",
+                    "Inconsistent creation times in Datastore shard: %s vs. %s",
                     creationTime,
                     shard.creationTime);
               }
@@ -177,14 +182,14 @@ public class SignedMarkRevocationListDao {
       saveToDatastore(signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime);
       suppressExceptionUnlessInTest(
           () -> SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList),
-          "Error inserting signed mark revocations into Cloud SQL.");
+          "Error inserting signed mark revocations into secondary database (Cloud SQL).");
     } else {
       SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList);
       suppressExceptionUnlessInTest(
           () ->
               saveToDatastore(
                   signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime),
-          "Error inserting signed mark revocations into Datastore.");
+          "Error inserting signed mark revocations into secondary database (Datastore).");
     }
   }
 
