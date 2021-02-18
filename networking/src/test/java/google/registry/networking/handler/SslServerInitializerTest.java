@@ -42,6 +42,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLEngine;
@@ -104,12 +105,21 @@ class SslServerInitializerTest {
       SslProvider sslProvider,
       X509Certificate trustedCertificate,
       PrivateKey privateKey,
-      X509Certificate certificate) {
+      X509Certificate certificate,
+      String protocol,
+      String ciphers) {
     return new ChannelInitializer<LocalChannel>() {
       @Override
       protected void initChannel(LocalChannel ch) throws Exception {
         SslContextBuilder sslContextBuilder =
-            SslContextBuilder.forClient().trustManager(trustedCertificate).sslProvider(sslProvider);
+            SslContextBuilder.forClient()
+                .trustManager(trustedCertificate)
+                .sslProvider(sslProvider)
+                .protocols(protocol);
+        // .protocols(sslProvider == SslProvider.OPENSSL ? "TLSv1.3" : "TLSv1.2");
+        if (ciphers != null) {
+          sslContextBuilder.protocols("TLSv1.2").ciphers(Arrays.asList(ciphers));
+        }
         if (privateKey != null && certificate != null) {
           sslContextBuilder.keyManager(privateKey, certificate);
         }
@@ -125,6 +135,20 @@ class SslServerInitializerTest {
         ch.pipeline().addLast(sslHandler);
       }
     };
+  }
+
+  private ChannelHandler getClientHandler(
+      SslProvider sslProvider,
+      X509Certificate trustedCertificate,
+      PrivateKey privateKey,
+      X509Certificate certificate) {
+    return getClientHandler(
+        sslProvider,
+        trustedCertificate,
+        privateKey,
+        certificate,
+        sslProvider.equals(SslProvider.OPENSSL) ? "TLSv1.3" : "TLSv1.2",
+        null);
   }
 
   @ParameterizedTest
@@ -170,6 +194,59 @@ class SslServerInitializerTest {
     // the server channel, and vice versa.
     assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
     assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_cipherNotAccepted(SslProvider sslProvider) throws Exception {
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    LocalAddress localAddress = new LocalAddress("CIPHER_NOT_ACCEPTED_" + sslProvider);
+
+    nettyExtension.setUpServer(
+        localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
+    SelfSignedCaCertificate clientSsc =
+        SelfSignedCaCertificate.create(
+            "CLIENT",
+            Date.from(Instant.now().minus(Duration.ofDays(2))),
+            Date.from(Instant.now().plus(Duration.ofDays(1))));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(
+            sslProvider,
+            serverSsc.cert(),
+            clientSsc.key(),
+            clientSsc.cert(),
+            sslProvider.equals(SslProvider.OPENSSL) ? "TLSv1.3" : "TLSv1.2",
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"));
+
+    verifySslException(
+        nettyExtension.getServerChannel(),
+        channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
+        SSLHandshakeException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_protocolNotAccepted(SslProvider sslProvider) throws Exception {
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    LocalAddress localAddress = new LocalAddress("PROTOCOL_NOT_ACCEPTED_" + sslProvider);
+
+    nettyExtension.setUpServer(
+        localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
+    SelfSignedCaCertificate clientSsc =
+        SelfSignedCaCertificate.create(
+            "CLIENT",
+            Date.from(Instant.now().minus(Duration.ofDays(2))),
+            Date.from(Instant.now().plus(Duration.ofDays(1))));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(
+            sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1.1", null));
+
+    verifySslException(
+        nettyExtension.getServerChannel(),
+        channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
+        SSLHandshakeException.class);
   }
 
   @ParameterizedTest
