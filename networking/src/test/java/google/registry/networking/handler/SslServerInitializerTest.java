@@ -42,7 +42,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLEngine;
@@ -116,9 +116,8 @@ class SslServerInitializerTest {
                 .trustManager(trustedCertificate)
                 .sslProvider(sslProvider)
                 .protocols(protocol);
-        // .protocols(sslProvider == SslProvider.OPENSSL ? "TLSv1.3" : "TLSv1.2");
         if (ciphers != null) {
-          sslContextBuilder.protocols("TLSv1.2").ciphers(Arrays.asList(ciphers));
+          sslContextBuilder.protocols("TLSv1.2").ciphers(Collections.singletonList(ciphers));
         }
         if (privateKey != null && certificate != null) {
           sslContextBuilder.keyManager(privateKey, certificate);

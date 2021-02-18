@@ -95,10 +95,10 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
     this.certificatesSupplier = certificatesSupplier;
     this.supportedSslVersions =
         sslProvider == SslProvider.OPENSSL
-            ? ImmutableList.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1")
-            // JDK support for TLS 1.3 won't be available until 2020-07-14 at the earliest.
+            ? ImmutableList.of("TLSv1.3", "TLSv1.2")
+            // JDK support for TLS 1.3 won't be available until 2021-04-20 at the earliest.
             // See: https://java.com/en/jre-jdk-cryptoroadmap.html
-            : ImmutableList.of("TLSv1.2", "TLSv1.1", "TLSv1");
+            : ImmutableList.of("TLSv1.2");
   }
 
   @Override
