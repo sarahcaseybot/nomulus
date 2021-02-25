@@ -67,6 +67,28 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   public static final AttributeKey<Promise<X509Certificate>> CLIENT_CERTIFICATE_PROMISE_KEY =
       AttributeKey.valueOf("CLIENT_CERTIFICATE_PROMISE_KEY");
 
+  /**
+   * The list of cipher suites that are currently acceptable to create a successful handshake.
+   *
+   * <p>This list includes all of the current TLS1.3 ciphers and a collection of TLS1.2 ciphers with
+   * no known security vulnerabilities. Note that OpenSSL uses a separate nomenclature for the
+   * ciphers than the ones used here. More information about these cipher suites and their OpenSSL
+   * names can be found at ciphersuite.info.
+   */
+  private static final ImmutableList TLS_CIPHERS =
+      ImmutableList.of(
+          "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+          "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+          "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+          "TLS_AES_128_GCM_SHA256",
+          "TLS_AES_256_GCM_SHA384",
+          "TLS_CHACHA20_POLY1305_SHA256",
+          "TLS_AES_128_CCM_SHA256",
+          "TLS_AES_128_CCM_8_SHA256");
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final boolean requireClientCert;
   // TODO(jianglai): Always validate client certs (if required).
@@ -103,23 +125,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
 
   @Override
   protected void initChannel(C channel) throws Exception {
-    ImmutableList.Builder ciphers =
-        ImmutableList.builder()
-            .add(
-                "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-                "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-                "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-                "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-                "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
-    if (sslProvider.equals(SslProvider.OPENSSL)) {
-      ciphers.add(
-          "TLS_AES_128_GCM_SHA256",
-          "TLS_AES_256_GCM_SHA384",
-          "TLS_CHACHA20_POLY1305_SHA256",
-          "TLS_AES_128_CCM_SHA256",
-          "TLS_AES_128_CCM_8_SHA256");
-    }
+    ImmutableList.Builder ciphers = ImmutableList.builder().addAll(TLS_CIPHERS);
     SslContext sslContext =
         SslContextBuilder.forServer(
                 privateKeySupplier.get(),

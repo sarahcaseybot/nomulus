@@ -107,17 +107,17 @@ class SslServerInitializerTest {
       PrivateKey privateKey,
       X509Certificate certificate,
       String protocol,
-      String ciphers) {
+      String cipher) {
     return new ChannelInitializer<LocalChannel>() {
       @Override
       protected void initChannel(LocalChannel ch) throws Exception {
         SslContextBuilder sslContextBuilder =
-            SslContextBuilder.forClient()
-                .trustManager(trustedCertificate)
-                .sslProvider(sslProvider)
-                .protocols(protocol);
-        if (ciphers != null) {
-          sslContextBuilder.protocols("TLSv1.2").ciphers(Collections.singletonList(ciphers));
+            SslContextBuilder.forClient().trustManager(trustedCertificate).sslProvider(sslProvider);
+        if (cipher != null) {
+          sslContextBuilder.ciphers(Collections.singletonList(cipher));
+        }
+        if (protocol != null) {
+          sslContextBuilder.protocols(protocol);
         }
         if (privateKey != null && certificate != null) {
           sslContextBuilder.keyManager(privateKey, certificate);
@@ -141,13 +141,7 @@ class SslServerInitializerTest {
       X509Certificate trustedCertificate,
       PrivateKey privateKey,
       X509Certificate certificate) {
-    return getClientHandler(
-        sslProvider,
-        trustedCertificate,
-        privateKey,
-        certificate,
-        sslProvider.equals(SslProvider.OPENSSL) ? "TLSv1.3" : "TLSv1.2",
-        null);
+    return getClientHandler(sslProvider, trustedCertificate, privateKey, certificate, null, null);
   }
 
   @ParameterizedTest
@@ -215,7 +209,7 @@ class SslServerInitializerTest {
             serverSsc.cert(),
             clientSsc.key(),
             clientSsc.cert(),
-            sslProvider.equals(SslProvider.OPENSSL) ? "TLSv1.3" : "TLSv1.2",
+            "TLSv1.2",
             "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"));
 
     verifySslException(
