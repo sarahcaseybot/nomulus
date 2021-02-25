@@ -125,7 +125,6 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
 
   @Override
   protected void initChannel(C channel) throws Exception {
-    ImmutableList.Builder ciphers = ImmutableList.builder().addAll(TLS_CIPHERS);
     SslContext sslContext =
         SslContextBuilder.forServer(
                 privateKeySupplier.get(),
@@ -134,7 +133,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
             .clientAuth(requireClientCert ? ClientAuth.REQUIRE : ClientAuth.NONE)
             .protocols(supportedSslVersions)
-            .ciphers(ciphers.build(), SupportedCipherSuiteFilter.INSTANCE)
+            .ciphers(TLS_CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
             .build();
 
     logger.atInfo().log("Available Cipher Suites: %s", sslContext.cipherSuites());
