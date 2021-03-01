@@ -117,8 +117,10 @@ class SslServerInitializerTest {
       @Override
       protected void initChannel(LocalChannel ch) throws Exception {
         SslContextBuilder sslContextBuilder =
-            SslContextBuilder.forClient().trustManager(trustedCertificate).sslProvider(sslProvider);
-        sslContextBuilder.ciphers(cipher);
+            SslContextBuilder.forClient()
+                .trustManager(trustedCertificate)
+                .sslProvider(sslProvider)
+                .ciphers(cipher);
         if (protocol != null) {
           sslContextBuilder.protocols(protocol);
         }
