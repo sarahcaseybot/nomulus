@@ -227,10 +227,52 @@ class SslServerInitializerTest {
 
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
+  void testSuccess_someCiphersNotAccepted(SslProvider sslProvider) throws Exception {
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    LocalAddress localAddress = new LocalAddress("SOME_CIPHERS_NOT_ACCEPTED_" + sslProvider);
+
+    nettyExtension.setUpServer(
+        localAddress,
+        new SslServerInitializer<LocalChannel>(
+            true,
+            true,
+            sslProvider,
+            Suppliers.ofInstance(serverSsc.key()),
+            Suppliers.ofInstance(ImmutableList.of(serverSsc.cert())),
+            DateTime.parse("2021-04-01T16:00:00Z"),
+            new FakeClock(DateTime.parse("2021-05-01T16:00:00Z"))));
+    SelfSignedCaCertificate clientSsc =
+        SelfSignedCaCertificate.create(
+            "CLIENT",
+            Date.from(Instant.now().minus(Duration.ofDays(2))),
+            Date.from(Instant.now().plus(Duration.ofDays(1))));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(
+            sslProvider,
+            serverSsc.cert(),
+            clientSsc.key(),
+            clientSsc.cert(),
+            "TLSv1.2",
+            ImmutableList.of(
+                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", // Only accepted cipher
+                "TLS_RSA_WITH_AES_256_CBC_SHA")));
+
+    SSLSession sslSession = setUpSslChannel(nettyExtension.getClientChannel(), serverSsc.cert());
+    nettyExtension.assertThatMessagesWork();
+
+    assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
+    assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
+    assertThat(sslSession.getCipherSuite()).isEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
   void testSuccess_cipherNotAccepted_beforeEnforcementDate(SslProvider sslProvider)
       throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
-    LocalAddress localAddress = new LocalAddress("CIPHER_NOT_ACCEPTED_" + sslProvider);
+    LocalAddress localAddress = new LocalAddress("CIPHER_ACCEPTED_BEFORE_DATE_" + sslProvider);
 
     nettyExtension.setUpServer(
         localAddress,
@@ -293,7 +335,7 @@ class SslServerInitializerTest {
   void testSuccess_protocolNotAccepted_beforeEnforcementDate(SslProvider sslProvider)
       throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
-    LocalAddress localAddress = new LocalAddress("PROTOCOL_NOT_ACCEPTED_" + sslProvider);
+    LocalAddress localAddress = new LocalAddress("PROTOCOL_ACCEPTED_BEFORE_DATE_" + sslProvider);
 
     nettyExtension.setUpServer(
         localAddress,

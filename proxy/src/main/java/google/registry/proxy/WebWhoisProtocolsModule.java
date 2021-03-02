@@ -22,6 +22,7 @@ import google.registry.networking.handler.SslServerInitializer;
 import google.registry.proxy.Protocol.FrontendProtocol;
 import google.registry.proxy.handler.WebWhoisRedirectHandler;
 import google.registry.util.Clock;
+import google.registry.util.DateTimeUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -33,7 +34,6 @@ import java.util.function.Supplier;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
-import org.joda.time.DateTime;
 
 /** A module that provides the {@link FrontendProtocol}s to redirect HTTP(S) web WHOIS requests. */
 @Module
@@ -133,7 +133,6 @@ public final class WebWhoisProtocolsModule {
   @Provides
   @HttpsWhoisProtocol
   static SslServerInitializer<NioSocketChannel> provideSslServerInitializer(
-      ProxyConfig config,
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
       Supplier<ImmutableList<X509Certificate>> certificatesSupplier,
@@ -144,7 +143,7 @@ public final class WebWhoisProtocolsModule {
         sslProvider,
         privateKeySupplier,
         certificatesSupplier,
-        DateTime.parse(config.tlsEnforcementStartTime),
+        DateTimeUtils.END_OF_TIME,
         clock);
   }
 }
