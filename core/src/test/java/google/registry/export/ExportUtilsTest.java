@@ -19,9 +19,12 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.testing.AppEngineExtension;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -34,18 +37,34 @@ class ExportUtilsTest {
 
   @Test
   void test_exportReservedTerms() {
-    ReservedList rl1 = persistReservedList(
-        "tld-reserved1",
-        "lol,FULLY_BLOCKED",
-        "cat,FULLY_BLOCKED");
-    ReservedList rl2 = persistReservedList(
-        "tld-reserved2",
-        "lol,NAME_COLLISION",
-        "snow,FULLY_BLOCKED");
-    ReservedList rl3 = persistReservedList(
-        "tld-reserved3",
-        false,
-        "tine,FULLY_BLOCKED");
+    ReservedList rl1 =
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved1")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
+                .build());
+    ReservedList rl2 =
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved2")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("lol,NAME_COLLISION", "snow,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
+                .build());
+    ReservedList rl3 =
+        new ReservedList.Builder()
+            .setName("tld-reserved3")
+            .setReservedListMapFromLines(ImmutableList.of("tine,FULLY_BLOCKED"))
+            .setShouldPublish(false)
+            .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
+            .build();
+    persistReservedList(rl3);
+    // persistResource(rl3);
+    // ReservedListSqlDao.save(rl3);
     createTld("tld");
     persistResource(Registry.get("tld").asBuilder().setReservedLists(rl1, rl2, rl3).build());
     // Should not contain jimmy, tine, or oval.

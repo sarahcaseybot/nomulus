@@ -35,18 +35,20 @@ class UpdateReservedListCommandTest
 
   @BeforeEach
   void beforeEach() {
-    populateInitialReservedListInDatastore(true);
+    populateInitialReservedListInDatabase(true);
   }
 
-  private void populateInitialReservedListInDatastore(boolean shouldPublish) {
-    persistResource(
+  private void populateInitialReservedListInDatabase(boolean shouldPublish) {
+    ReservedList reservedList =
         new ReservedList.Builder()
             .setName("xn--q9jyb4c_common-reserved")
             .setReservedListMapFromLines(ImmutableList.of("helicopter,FULLY_BLOCKED"))
             .setCreationTime(START_OF_TIME)
             .setLastUpdateTime(START_OF_TIME)
             .setShouldPublish(shouldPublish)
-            .build());
+            .build();
+    persistResource(reservedList);
+    ReservedListSqlDao.save(reservedList);
   }
 
   private void populateInitialReservedListInCloudSql(boolean shouldPublish) {
@@ -89,7 +91,7 @@ class UpdateReservedListCommandTest
 
   @Test
   void testSuccess_shouldPublish_doesntOverrideFalseIfNotSpecified() throws Exception {
-    populateInitialReservedListInDatastore(false);
+    populateInitialReservedListInDatabase(false);
     runCommandForced("--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();

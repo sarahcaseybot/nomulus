@@ -31,7 +31,7 @@ class ListReservedListsActionTest extends ListActionTestCase {
 
   @BeforeEach
   void beforeEach() {
-    ReservedList rl1 = persistReservedList("xn--q9jyb4c-published", true, "blah,FULLY_BLOCKED");
+    ReservedList rl1 = persistReservedList("xn--q9jyb4c-published", "blah,FULLY_BLOCKED");
     ReservedList rl2 = persistReservedList("xn--q9jyb4c-private", false, "dugong,FULLY_BLOCKED");
     createTld("xn--q9jyb4c");
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setReservedLists(rl1, rl2).build());

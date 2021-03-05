@@ -29,6 +29,8 @@ import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.testing.AppEngineExtension;
 import org.joda.money.Money;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -64,7 +66,15 @@ public class PremiumListTest {
   @Test
   void testSave_invalidCurrencySymbol() {
     assertThrows(
-        IllegalArgumentException.class, () -> persistReservedList("gtld1", "lol,XBTC 200"));
+        IllegalArgumentException.class,
+        () ->
+            persistReservedList(
+                new ReservedList.Builder()
+                    .setName("gtld1")
+                    .setReservedListMapFromLines(ImmutableList.of("lol,XBTC 200"))
+                    .setShouldPublish(true)
+                    .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
+                    .build()));
   }
 
   @Test
