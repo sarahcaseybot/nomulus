@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import google.registry.model.registry.Registry;
@@ -39,8 +38,6 @@ import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -66,15 +63,10 @@ public class ExportReservedTermsActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    ReservedList rl =
-        persistReservedList(
-            new ReservedList.Builder()
-                .setName("tld-reserved")
-                .setReservedListMapFromLines(
-                    ImmutableList.of("lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED"))
-                .setShouldPublish(true)
-                .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
-                .build());
+    ReservedList rl = persistReservedList(
+        "tld-reserved",
+        "lol,FULLY_BLOCKED",
+        "cat,FULLY_BLOCKED");
     createTld("tld");
     persistResource(Registry.get("tld").asBuilder()
         .setReservedLists(rl)

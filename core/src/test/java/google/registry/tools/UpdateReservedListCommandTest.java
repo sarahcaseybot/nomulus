@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,16 +39,14 @@ class UpdateReservedListCommandTest
   }
 
   private void populateInitialReservedListInDatabase(boolean shouldPublish) {
-    ReservedList reservedList =
+    persistReservedList(
         new ReservedList.Builder()
             .setName("xn--q9jyb4c_common-reserved")
             .setReservedListMapFromLines(ImmutableList.of("helicopter,FULLY_BLOCKED"))
             .setCreationTime(START_OF_TIME)
             .setLastUpdateTime(START_OF_TIME)
             .setShouldPublish(shouldPublish)
-            .build();
-    persistResource(reservedList);
-    ReservedListSqlDao.save(reservedList);
+            .build());
   }
 
   private void populateInitialReservedListInCloudSql(boolean shouldPublish) {

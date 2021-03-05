@@ -343,14 +343,7 @@ public class DatabaseHelper {
   }
 
   public static ReservedList persistReservedList(String listName, String... lines) {
-    ReservedList reservedList =
-        new ReservedList.Builder()
-            .setName(listName)
-            .setReservedListMapFromLines(ImmutableList.copyOf(lines))
-            .setShouldPublish(true)
-            .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
-            .build();
-    return persistReservedList(reservedList);
+    return persistReservedList(listName, true, lines);
   }
 
   public static ReservedList persistReservedList(ReservedList reservedList) {
