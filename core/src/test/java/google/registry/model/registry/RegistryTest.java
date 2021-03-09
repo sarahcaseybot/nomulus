@@ -136,23 +136,23 @@ public class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testSetReservedList_doesntMutateExistingRegistry() {
     ReservedList rl15 =
-        new ReservedList.Builder()
-            .setName("tld-reserved15")
-            .setReservedListMapFromLines(
-                ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-            .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .build();
-    persistReservedList(rl15);
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved15")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     ReservedList rl16 =
-        new ReservedList.Builder()
-            .setName("tld-reserved16")
-            .setReservedListMapFromLines(
-                ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-            .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .build();
-    persistReservedList(rl16);
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved16")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     Registry registry1 =
         newRegistry("propter", "PROPTER")
             .asBuilder()
@@ -188,23 +188,23 @@ public class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testSetReservedLists() {
     ReservedList rl5 =
-        new ReservedList.Builder()
-            .setName("tld-reserved5")
-            .setReservedListMapFromLines(
-                ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
-            .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .build();
-    persistReservedList(rl5);
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved5")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     ReservedList rl6 =
-        new ReservedList.Builder()
-            .setName("tld-reserved6")
-            .setReservedListMapFromLines(
-                ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
-            .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .build();
-    persistReservedList(rl6);
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved6")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
     assertThat(r.getReservedLists().stream().map(Key::getName))
@@ -215,24 +215,22 @@ public class RegistryTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testSetReservedListsByName() {
-    ReservedList rl15 =
+    persistReservedList(
         new ReservedList.Builder()
             .setName("tld-reserved15")
             .setReservedListMapFromLines(
                 ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
             .setShouldPublish(true)
             .setLastUpdateTime(fakeClock.nowUtc())
-            .build();
-    persistReservedList(rl15);
-    ReservedList rl16 =
+            .build());
+    persistReservedList(
         new ReservedList.Builder()
             .setName("tld-reserved16")
             .setReservedListMapFromLines(
                 ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
             .setShouldPublish(true)
             .setLastUpdateTime(fakeClock.nowUtc())
-            .build();
-    persistReservedList(rl16);
+            .build());
     Registry r =
         Registry.get("tld")
             .asBuilder()
