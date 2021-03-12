@@ -81,81 +81,79 @@ public class ReservedListDualDatabaseDao {
         primaryDatabase.equals(PrimaryDatabase.DATASTORE)
             ? ReservedListSqlDao.getLatestRevision(primaryList.getName())
             : ReservedListDatastoreDao.getLatestRevision(primaryList.getName());
-    if (maybeSecondaryList.isPresent()) {
-      Map<String, ReservedListEntry> labelsToReservations =
-          primaryList.reservedListMap.entrySet().parallelStream()
-              .collect(
-                  toImmutableMap(
-                      Map.Entry::getKey,
-                      entry ->
-                          ReservedListEntry.create(
-                              entry.getKey(),
-                              entry.getValue().reservationType,
-                              entry.getValue().comment)));
-
-      ReservedList secondaryList = maybeSecondaryList.get();
-      MapDifference<String, ReservedListEntry> diff =
-          Maps.difference(labelsToReservations, secondaryList.reservedListMap);
-      if (!diff.areEqual()) {
-        if (diff.entriesDiffering().size() > 10) {
-          throw new IllegalStateException(
-              String.format(
-                  "Unequal reserved lists detected, %s list with revision"
-                      + " id %d has %d different records than the current"
-                      + " primary database list.",
-                  primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? "Cloud SQL" : "Datastore",
-                  secondaryList.getRevisionId(),
-                  diff.entriesDiffering().size()));
-        } else {
-          StringBuilder diffMessage = new StringBuilder("Unequal reserved lists detected:\n");
-          diff.entriesDiffering().entrySet().stream()
-              .forEach(
-                  entry -> {
-                    String label = entry.getKey();
-                    ValueDifference<ReservedListEntry> valueDiff = entry.getValue();
-                    diffMessage.append(
-                        String.format(
-                            "Domain label %s has entry %s in %s and entry"
-                                + " %s in the secondary database.\n",
-                            label,
-                            valueDiff.leftValue(),
-                            primaryDatabase.equals(PrimaryDatabase.DATASTORE)
-                                ? "Datastore"
-                                : "Cloud SQL",
-                            valueDiff.rightValue()));
-                  });
-          diff.entriesOnlyOnLeft().entrySet().stream()
-              .forEach(
-                  entry -> {
-                    String label = entry.getKey();
-                    diffMessage.append(
-                        String.format(
-                            "Domain label %s has entry in %s, but not in the secondary database.\n",
-                            label,
-                            primaryDatabase.equals(PrimaryDatabase.DATASTORE)
-                                ? "Datastore"
-                                : "Cloud SQL"));
-                  });
-          diff.entriesOnlyOnRight().entrySet().stream()
-              .forEach(
-                  entry -> {
-                    String label = entry.getKey();
-                    diffMessage.append(
-                        String.format(
-                            "Domain label %s has entry in %s, but not in the primary database.\n",
-                            label,
-                            primaryDatabase.equals(PrimaryDatabase.DATASTORE)
-                                ? "Cloud SQL"
-                                : "Datastore"));
-                  });
-          throw new IllegalStateException(diffMessage.toString());
-        }
-      }
-    } else {
+    if (!maybeSecondaryList.isPresent()) {
       throw new IllegalStateException(
           String.format(
               "Reserved list in the secondary database (%s) is empty.",
               primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? "Cloud SQL" : "Datastore"));
     }
+    Map<String, ReservedListEntry> labelsToReservations =
+        primaryList.reservedListMap.entrySet().parallelStream()
+            .collect(
+                toImmutableMap(
+                    Map.Entry::getKey,
+                    entry ->
+                        ReservedListEntry.create(
+                            entry.getKey(),
+                            entry.getValue().reservationType,
+                            entry.getValue().comment)));
+
+    ReservedList secondaryList = maybeSecondaryList.get();
+    MapDifference<String, ReservedListEntry> diff =
+        Maps.difference(labelsToReservations, secondaryList.reservedListMap);
+      if (!diff.areEqual()) {
+        if (diff.entriesDiffering().size() > 10) {
+        throw new IllegalStateException(
+            String.format(
+                "Unequal reserved lists detected, %s list with revision"
+                    + " id %d has %d different records than the current"
+                    + " primary database list.",
+                primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? "Cloud SQL" : "Datastore",
+                secondaryList.getRevisionId(),
+                diff.entriesDiffering().size()));
+      }
+          StringBuilder diffMessage = new StringBuilder("Unequal reserved lists detected:\n");
+      diff.entriesDiffering().entrySet().stream()
+          .forEach(
+              entry -> {
+                String label = entry.getKey();
+                ValueDifference<ReservedListEntry> valueDiff = entry.getValue();
+                diffMessage.append(
+                    String.format(
+                        "Domain label %s has entry %s in %s and entry"
+                            + " %s in the secondary database.\n",
+                        label,
+                        valueDiff.leftValue(),
+                        primaryDatabase.equals(PrimaryDatabase.DATASTORE)
+                            ? "Datastore"
+                            : "Cloud SQL",
+                        valueDiff.rightValue()));
+              });
+      diff.entriesOnlyOnLeft().entrySet().stream()
+          .forEach(
+              entry -> {
+                String label = entry.getKey();
+                diffMessage.append(
+                    String.format(
+                        "Domain label %s has entry in %s, but not in the secondary database.\n",
+                        label,
+                        primaryDatabase.equals(PrimaryDatabase.DATASTORE)
+                            ? "Datastore"
+                            : "Cloud SQL"));
+              });
+      diff.entriesOnlyOnRight().entrySet().stream()
+          .forEach(
+              entry -> {
+                String label = entry.getKey();
+                diffMessage.append(
+                    String.format(
+                        "Domain label %s has entry in %s, but not in the primary database.\n",
+                        label,
+                        primaryDatabase.equals(PrimaryDatabase.DATASTORE)
+                            ? "Cloud SQL"
+                            : "Datastore"));
+              });
+          throw new IllegalStateException(diffMessage.toString());
+      }
   }
 }

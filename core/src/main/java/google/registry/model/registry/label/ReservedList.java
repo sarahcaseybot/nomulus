@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static org.joda.time.DateTimeZone.UTC;
 

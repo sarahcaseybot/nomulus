@@ -38,50 +38,46 @@ public class ReservedListDatastoreDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  private ImmutableMap<String, ReservedListEntry> testReservations;
+  private ImmutableMap<String, ReservedListEntry> reservations;
 
-  private ReservedList testReservedList;
+  private ReservedList reservedList;
 
   @BeforeEach
   void setUp() {
-    testReservations =
+    reservations =
         ImmutableMap.of(
             "food",
             ReservedListEntry.create("food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null),
             "music",
             ReservedListEntry.create("music", ReservationType.FULLY_BLOCKED, "fully blocked"));
 
-    testReservedList =
+    reservedList =
         new ReservedList.Builder()
             .setName("testlist")
             .setLastUpdateTime(fakeClock.nowUtc())
             .setShouldPublish(false)
-            .setReservedListMap(testReservations)
+            .setReservedListMap(reservations)
             .build();
   }
 
   @Test
   void save_worksSuccessfully() {
-    ReservedListDatastoreDao.save(testReservedList);
+    ReservedListDatastoreDao.save(reservedList);
     Optional<ReservedList> savedList =
         ofyTm()
             .loadByKeyIfPresent(
                 VKey.createOfy(
                     ReservedList.class,
-                    Key.create(getCrossTldKey(), ReservedList.class, testReservedList.name)));
-    assertThat(savedList.isPresent()).isTrue();
-    assertThat(savedList.get()).isEqualTo(testReservedList);
+                    Key.create(getCrossTldKey(), ReservedList.class, reservedList.name)));
+    assertThat(savedList.get()).isEqualTo(reservedList);
   }
 
   @Test
   void getLatestRevision_worksSuccessfully() {
     assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isFalse();
-    ReservedListDatastoreDao.save(testReservedList);
+    ReservedListDatastoreDao.save(reservedList);
     ReservedList persistedList = ReservedListDatastoreDao.getLatestRevision("testlist").get();
-    assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(persistedList.getName()).isEqualTo("testlist");
-    assertThat(persistedList.getShouldPublish()).isFalse();
-    assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
+    assertThat(persistedList.getReservedListEntries()).isEqualTo(reservations);
   }
 
   @Test
@@ -98,11 +94,8 @@ public class ReservedListDatastoreDaoTest {
                         "old", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
             .build());
     assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isTrue();
-    ReservedListDatastoreDao.save(testReservedList);
+    ReservedListDatastoreDao.save(reservedList);
     ReservedList persistedList = ReservedListDatastoreDao.getLatestRevision("testlist").get();
-    assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(persistedList.getName()).isEqualTo("testlist");
-    assertThat(persistedList.getShouldPublish()).isFalse();
-    assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
+    assertThat(persistedList.getReservedListEntries()).isEqualTo(reservations);
   }
 }
