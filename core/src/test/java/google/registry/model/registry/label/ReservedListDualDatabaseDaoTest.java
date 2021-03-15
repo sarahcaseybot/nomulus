@@ -132,7 +132,7 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
             ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName())
                 .get()
                 .getReservedListEntries())
-        .hasSize(2);
+        .isEqualTo(reservations);
     ImmutableMap<String, ReservedListEntry> newReservations =
         ImmutableMap.of(
             "food",
@@ -160,7 +160,7 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
             ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName())
                 .get()
                 .getReservedListEntries())
-        .hasSize(2);
+        .isEqualTo(reservations);
     ImmutableMap<String, ReservedListEntry> newReservations =
         ImmutableMap.of(
             "food",
@@ -177,7 +177,7 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
             ReservedListDualDatabaseDao.getLatestRevision(secondList.getName())
                 .get()
                 .getReservedListEntries())
-        .hasSize(1);
+        .isEqualTo(newReservations);
   }
 
   @TestOfyAndSql

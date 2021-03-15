@@ -77,7 +77,7 @@ public class ReservedListDatastoreDaoTest {
     assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isFalse();
     ReservedListDatastoreDao.save(reservedList);
     ReservedList persistedList = ReservedListDatastoreDao.getLatestRevision("testlist").get();
-    assertThat(persistedList.getReservedListEntries()).isEqualTo(reservations);
+    assertThat(persistedList).isEqualTo(reservedList);
   }
 
   @Test
@@ -93,9 +93,10 @@ public class ReservedListDatastoreDaoTest {
                     ReservedListEntry.create(
                         "old", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
             .build());
-    assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isTrue();
+    assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").get())
+        .isNotEqualTo(reservedList);
     ReservedListDatastoreDao.save(reservedList);
     ReservedList persistedList = ReservedListDatastoreDao.getLatestRevision("testlist").get();
-    assertThat(persistedList.getReservedListEntries()).isEqualTo(reservations);
+    assertThat(persistedList).isEqualTo(reservedList);
   }
 }
