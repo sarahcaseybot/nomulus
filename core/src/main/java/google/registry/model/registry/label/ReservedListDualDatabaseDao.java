@@ -56,11 +56,6 @@ public class ReservedListDualDatabaseDao {
    * exists.
    */
   public static Optional<ReservedList> getLatestRevision(String reservedListName) {
-    // PrimaryDatabase primaryDatabase =
-    //     tm().transactNew(
-    //             () ->
-    // DatabaseMigrationUtils.getPrimaryDatabase(TransitionId.DOMAIN_LABEL_LISTS));
-
     Optional<ReservedList> maybePrimaryList =
         isDatastore(TransitionId.DOMAIN_LABEL_LISTS)
             ? ReservedListDatastoreDao.getLatestRevision(reservedListName)
@@ -103,7 +98,7 @@ public class ReservedListDualDatabaseDao {
                 "Unequal reserved lists detected, %s list with revision"
                     + " id %d has %d different records than the current"
                     + " primary database list.",
-                isDatastore(TransitionId.DOMAIN_LABEL_LISTS) ? "Datastore" : "Cloud SQL",
+                isDatastore(TransitionId.DOMAIN_LABEL_LISTS) ? "Cloud SQL" : "Datastore",
                 secondaryList.getRevisionId(),
                 diff.entriesDiffering().size()));
       }
