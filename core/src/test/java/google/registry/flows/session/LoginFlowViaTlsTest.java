@@ -170,16 +170,6 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   }
 
   @Test
-  // TODO(Sarahbot): This should fail once hash fallback is removed
-  void testSuccess_missingClientCertificate() throws Exception {
-    persistResource(getRegistrarBuilder().build());
-    credentials =
-        new TlsCredentials(
-            true, GOOD_CERT_HASH, Optional.empty(), GOOD_IP, certificateChecker, clock);
-    doSuccessfulTest("login_valid.xml");
-  }
-
-  @Test
   void testFailure_missingClientCertificateAndHash() {
     persistResource(getRegistrarBuilder().build());
     credentials =

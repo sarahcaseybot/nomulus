@@ -26,7 +26,6 @@ import com.google.common.net.InetAddresses;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.config.RegistryEnvironment;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
@@ -145,108 +144,47 @@ public class TlsCredentials implements TransportCredentials {
    */
   @VisibleForTesting
   void validateCertificate(Registrar registrar) throws AuthenticationErrorException {
-    // Check that certificate is present in registrar object
+    // Check that certificate is present in the registrar object and the request
     if (!registrar.getClientCertificate().isPresent()
         && !registrar.getFailoverClientCertificate().isPresent()) {
-      // Log an error and validate using certificate hash instead
-      // TODO(sarahbot): throw a RegistrarCertificateNotConfiguredException once hash is no longer
-      // used as failover
-      logger.atWarning().log(
-          "There is no certificate configured for registrar %s.", registrar.getClientId());
+      if (requireSslCertificates) {
+        throw new RegistrarCertificateNotConfiguredException();
+      } else {
+        // If the environment is configured to allow missing SSL certificates and this cert is
+        // missing, then bypass the certificate checks.
+        return;
+      }
     } else if (!clientCertificate.isPresent()) {
-      // Check that the request included the full certificate
-      // Log an error and validate using certificate hash instead
-      // TODO(sarahbot): throw a MissingRegistrarCertificateException once hash is no longer used as
-      // failover
-      logger.atWarning().log(
-          "Request from registrar %s did not include X-SSL-Full-Certificate.",
-          registrar.getClientId());
-    } else {
+      throw new MissingRegistrarCertificateException();
+    }
       X509Certificate passedCert;
       Optional<X509Certificate> storedCert;
       Optional<X509Certificate> storedFailoverCert;
 
-      try {
-        storedCert = deserializePemCert(registrar.getClientCertificate());
-        storedFailoverCert = deserializePemCert(registrar.getFailoverClientCertificate());
+    try {
+      storedCert = deserializePemCert(registrar.getClientCertificate());
+      storedFailoverCert = deserializePemCert(registrar.getFailoverClientCertificate());
         passedCert = decodeCertString(clientCertificate.get());
-      } catch (Exception e) {
-        // TODO(Sarahbot@): remove this catch once we know it's working
-        logger.atWarning().log(
-            "Error converting certificate string to certificate for %s: %s",
-            registrar.getClientId(), e);
-        validateCertificateHash(registrar);
-        return;
-      }
+    } catch (CertificateException e) {
+      throw new IllegalStateException(
+          String.format(
+              "Error converting certificate string to certificate for %s: %s",
+              registrar.getClientId(), e));
+    }
 
       // Check if the certificate is equal to the one on file for the registrar.
       if (passedCert.equals(storedCert.orElse(null))
           || passedCert.equals(storedFailoverCert.orElse(null))) {
         // Check certificate for any requirement violations
-        // TODO(Sarahbot@): Throw exceptions instead of just logging once requirement enforcement
-        // begins
         try {
           certificateChecker.validateCertificate(passedCert);
         } catch (InsecureCertificateException e) {
-          // TODO(Sarahbot@): Remove this if statement after March 1. After March 1, exception
-          // should be thrown in all environments.
-          // throw exception in unit tests and Sandbox
-          if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
-              || RegistryEnvironment.get().equals(RegistryEnvironment.SANDBOX)
-              || clock.nowUtc().isAfter(CERT_ENFORCEMENT_START_TIME)) {
-            throw new CertificateContainsSecurityViolationsException(e);
-          }
-          logger.atWarning().log(
-              "Registrar certificate used for %s does not meet certificate requirements: %s",
-              registrar.getClientId(), e.getMessage());
-        } catch (Exception e) {
-          logger.atWarning().log(
-              "Error validating certificate for %s: %s", registrar.getClientId(), e);
+        throw new CertificateContainsSecurityViolationsException(e);
         }
-        // successfully validated, return here since hash validation is not necessary
-        return;
+      // successfully validated
+      return;
       }
-      // Log an error and validate using certificate hash instead
-      // TODO(sarahbot): throw a BadRegistrarCertificateException once hash is no longer used as
-      // failover
-      logger.atWarning().log("Non-matching certificate for registrar %s.", registrar.getClientId());
-    }
-    validateCertificateHash(registrar);
-  }
-
-  private void validateCertificateHash(Registrar registrar) throws AuthenticationErrorException {
-    logger.atWarning().log(
-        "Error validating certificate for %s, attempting to validate using certificate hash.",
-        registrar.getClientId());
-    // Check the certificate hash as a failover
-    // TODO(sarahbot): Remove hash checks once certificate checks are working.
-    if (!registrar.getClientCertificateHash().isPresent()
-        && !registrar.getFailoverClientCertificateHash().isPresent()) {
-      if (requireSslCertificates) {
-        throw new RegistrarCertificateNotConfiguredException();
-      } else {
-        // If the environment is configured to allow missing SSL certificate hashes and this hash is
-        // missing, then bypass the certificate hash checks.
-        return;
-      }
-    }
-    // Check that the request included the certificate hash
-    if (!clientCertificateHash.isPresent()) {
-      logger.atInfo().log(
-          "Request from registrar %s did not include X-SSL-Certificate.", registrar.getClientId());
-      throw new MissingRegistrarCertificateException();
-    }
-    // Check if the certificate hash is equal to the one on file for the registrar.
-    if (!clientCertificateHash.equals(registrar.getClientCertificateHash())
-        && !clientCertificateHash.equals(registrar.getFailoverClientCertificateHash())) {
-      logger.atWarning().log(
-          "Non-matching certificate hash (%s) for %s, wanted either %s or %s.",
-          clientCertificateHash,
-          registrar.getClientId(),
-          registrar.getClientCertificateHash(),
-          registrar.getFailoverClientCertificateHash());
       throw new BadRegistrarCertificateException();
-    }
   }
 
   private void validatePassword(Registrar registrar, String password)

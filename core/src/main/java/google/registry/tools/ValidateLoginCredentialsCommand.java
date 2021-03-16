@@ -14,9 +14,7 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
 import static google.registry.util.X509Utils.getCertificateHash;
@@ -59,13 +57,6 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
       validateWith = PathParameter.InputFile.class)
   private Path clientCertificatePath;
 
-  // TODO(sarahbot@): Remove this after hash fallback is removed
-  @Nullable
-  @Parameter(
-      names = {"-h", "--cert_hash"},
-      description = "Hash of the client certificate.")
-  private String clientCertificateHash;
-
   @Nullable
   @Parameter(
       names = {"-i", "--ip_address"},
@@ -77,21 +68,17 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() throws Exception {
-    checkArgument(
-        clientCertificatePath == null || isNullOrEmpty(clientCertificateHash),
-        "Can't specify both --cert_hash and --cert_file");
     String encodedCertificate = "";
     if (clientCertificatePath != null) {
       String certificateString = new String(Files.readAllBytes(clientCertificatePath), US_ASCII);
       encodedCertificate = encodeX509CertificateFromPemString(certificateString);
-      clientCertificateHash = getCertificateHash(loadCertificate(clientCertificatePath));
     }
     Registrar registrar =
         checkArgumentPresent(
             Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
     new TlsCredentials(
             true,
-            Optional.ofNullable(clientCertificateHash),
+            Optional.ofNullable(getCertificateHash(loadCertificate(clientCertificatePath))),
             Optional.ofNullable(encodedCertificate),
             Optional.ofNullable(clientIpAddress),
             certificateChecker,

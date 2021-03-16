@@ -16,7 +16,6 @@ package google.registry.flows;
 
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.X509Utils.encodeX509Certificate;
 import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
@@ -26,7 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.testing.TestLogHandler;
-import google.registry.config.RegistryEnvironment;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
@@ -36,7 +34,6 @@ import java.io.StringWriter;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -143,7 +140,8 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testBadCertificate_failsBadCertificate2200() throws Exception {
-    setCredentials("laffo", "cert");
+    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
+    setCredentials("laffo", proxyEncoded);
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
             "response_error.xml",
@@ -270,59 +268,6 @@ class EppLoginTlsTest extends EppTestCase {
                 "MSG",
                 "Registrar certificate contains the following security violations:\n"
                     + "Certificate is expired.\n"
-                    + "Certificate validity period is too long; it must be less than or equal to"
-                    + " 398 days."));
-  }
-
-  @Test
-  // TODO(sarahbot@): Remove this test once requirements are enforced in production
-  void testCertificateDoesNotMeetRequirementsInProduction_beforeStartDate_succeeds()
-      throws Exception {
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    // SAMPLE_CERT has a validity period that is too long
-    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
-    setCredentials(null, proxyEncoded);
-    persistResource(
-        loadRegistrar("NewRegistrar")
-            .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
-            .build());
-    // Even though the certificate contains security violations, the login will succeed in
-    // production
-    assertThatLogin("NewRegistrar", "foo-BAR2")
-        .atTime(DateTime.parse("2020-01-01T16:00:00Z"))
-        .hasSuccessfulLogin();
-    assertAboutLogs()
-        .that(handler)
-        .hasLogAtLevelWithMessage(
-            Level.WARNING,
-            "Registrar certificate used for NewRegistrar does not meet certificate requirements:"
-                + " Certificate validity period is too long; it must be less than or equal to 398"
-                + " days.");
-  }
-
-  @Test
-  void testCertificateDoesNotMeetRequirementsInProduction_afterStartDate_fails() throws Exception {
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
-    // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, proxyEncoded);
-    persistResource(
-        loadRegistrar("NewRegistrar")
-            .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
-            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
-            .build());
-    assertThatLogin("NewRegistrar", "foo-BAR2")
-        .atTime(DateTime.parse("2021-04-01T16:00:00Z"))
-        .hasResponse(
-            "response_error.xml",
-            ImmutableMap.of(
-                "CODE",
-                "2200",
-                "MSG",
-                "Registrar certificate contains the following security violations:\n"
                     + "Certificate validity period is too long; it must be less than or equal to"
                     + " 398 days."));
   }

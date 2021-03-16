@@ -35,8 +35,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +43,6 @@ import org.junit.jupiter.api.Test;
 class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginCredentialsCommand> {
 
   private static final String PASSWORD = "foo-BAR2";
-  private static final String CERT_HASH = CertificateSamples.SAMPLE_CERT3_HASH;
   private static final String CLIENT_IP = "1.2.3.4";
 
   @BeforeEach
@@ -115,7 +112,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
   }
 
   @Test
-  void testFailure_loginWithBadCertificateHash() {
+  void testFailure_loginWithBadCertificate() {
     EppException thrown =
         assertThrows(
             EppException.class,
@@ -123,7 +120,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
                 runCommand(
                     "--client=NewRegistrar",
                     "--password=" + PASSWORD,
-                    "--cert_hash=" + new StringBuilder(CERT_HASH).reverse(),
+                    "--cert_file=" + getCertFilename(CertificateSamples.SAMPLE_CERT2),
                     "--ip_address=" + CLIENT_IP));
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -137,7 +134,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
                 runCommand(
                     "--client=NewRegistrar",
                     "--password=" + PASSWORD,
-                    "--cert_hash=" + CERT_HASH,
+                    "--cert_file=" + getCertFilename(CertificateSamples.SAMPLE_CERT3),
                     "--ip_address=" + new StringBuilder(CLIENT_IP).reverse()));
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -148,7 +145,9 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
         ParameterException.class,
         () ->
             runCommand(
-                "--password=" + PASSWORD, "--cert_hash=" + CERT_HASH, "--ip_address=" + CLIENT_IP));
+                "--password=" + PASSWORD,
+                "--cert_file=" + getCertFilename(CertificateSamples.SAMPLE_CERT3),
+                "--ip_address=" + CLIENT_IP));
   }
 
   @Test
@@ -157,7 +156,9 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
         ParameterException.class,
         () ->
             runCommand(
-                "--client=NewRegistrar", "--cert_hash=" + CERT_HASH, "--ip_address=" + CLIENT_IP));
+                "--client=NewRegistrar",
+                "--cert_file=" + getCertFilename(CertificateSamples.SAMPLE_CERT3),
+                "--ip_address=" + CLIENT_IP));
   }
 
   @Test
@@ -168,22 +169,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
             runCommand(
                 "--client=NewRegistrar",
                 "--password=" + PASSWORD,
-                "--cert_hash=" + CERT_HASH,
                 "--ip_address=" + CLIENT_IP,
                 "--unrecognized_flag=foo"));
-  }
-
-  @Test
-  void testFailure_certHashAndCertFile() throws Exception {
-    Path certFile = Files.createFile(tmpDir.resolve("temp.crt"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            runCommand(
-                "--client=NewRegistrar",
-                "--password=" + PASSWORD,
-                "--cert_hash=" + CERT_HASH,
-                "--cert_file=" + certFile.toString(),
-                "--ip_address=" + CLIENT_IP));
   }
 }
