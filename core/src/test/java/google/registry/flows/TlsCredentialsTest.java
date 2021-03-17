@@ -67,13 +67,7 @@ final class TlsCredentialsTest {
   @Test
   void testClientCertificateAndHash_missing() {
     TlsCredentials tls =
-        new TlsCredentials(
-            true,
-            Optional.empty(),
-            Optional.empty(),
-            Optional.of("192.168.1.1"),
-            certificateChecker,
-            clock);
+        new TlsCredentials(true, Optional.empty(), Optional.of("192.168.1.1"), certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -87,13 +81,7 @@ final class TlsCredentialsTest {
   @Test
   void test_missingIpAddress_doesntAllowAccess() {
     TlsCredentials tls =
-        new TlsCredentials(
-            false,
-            Optional.of("certHash"),
-            Optional.empty(),
-            Optional.empty(),
-            certificateChecker,
-            clock);
+        new TlsCredentials(false, Optional.empty(), Optional.empty(), certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -109,12 +97,7 @@ final class TlsCredentialsTest {
   void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
     TlsCredentials tls =
         new TlsCredentials(
-            false,
-            Optional.of("certHash"),
-            Optional.of("cert"),
-            Optional.of("192.168.1.1"),
-            certificateChecker,
-            clock);
+            false, Optional.of("cert"), Optional.of("192.168.1.1"), certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -137,12 +120,7 @@ final class TlsCredentialsTest {
   void testClientCertificate_notConfigured() {
     TlsCredentials tls =
         new TlsCredentials(
-            true,
-            Optional.of("hash"),
-            Optional.of(SAMPLE_CERT),
-            Optional.of("192.168.1.1"),
-            certificateChecker,
-            clock);
+            true, Optional.of(SAMPLE_CERT), Optional.of("192.168.1.1"), certificateChecker);
     persistResource(loadRegistrar("TheRegistrar").asBuilder().build());
     assertThrows(
         RegistrarCertificateNotConfiguredException.class,
@@ -153,12 +131,7 @@ final class TlsCredentialsTest {
   void test_validateCertificate_canBeConfiguredToBypassCerts() throws Exception {
     TlsCredentials tls =
         new TlsCredentials(
-            false,
-            Optional.of("certHash"),
-            Optional.of("cert"),
-            Optional.of("192.168.1.1"),
-            certificateChecker,
-            clock);
+            false, Optional.of("cert"), Optional.of("192.168.1.1"), certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()

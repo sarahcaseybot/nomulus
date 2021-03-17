@@ -69,15 +69,13 @@ class EppLoginTlsTest extends EppTestCase {
 
   private String encodedCertString;
 
-  void setCredentials(String clientCertificateHash, String clientCertificate) {
+  void setCredentials(String clientCertificate) {
     setTransportCredentials(
         new TlsCredentials(
             true,
-            Optional.ofNullable(clientCertificateHash),
             Optional.ofNullable(clientCertificate),
             Optional.of("192.168.1.100:54321"),
-            certificateChecker,
-            clock));
+            certificateChecker));
   }
 
   @BeforeEach
@@ -99,14 +97,14 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testLoginLogout() throws Exception {
-    setCredentials(null, encodedCertString);
+    setCredentials(encodedCertString);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
   }
 
   @Test
   void testLogin_wrongPasswordFails() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
+    setCredentials(encodedCertString);
     // For TLS login, we also check the epp xml password.
     assertThatLogin("NewRegistrar", "incorrect")
         .hasResponse(
@@ -116,7 +114,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMultiLogin() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
+    setCredentials(encodedCertString);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -130,7 +128,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testNonAuthedLogin_fails() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
+    setCredentials(encodedCertString);
     assertThatLogin("TheRegistrar", "password2")
         .hasResponse(
             "response_error.xml",
@@ -141,7 +139,7 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testBadCertificate_failsBadCertificate2200() throws Exception {
     String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
-    setCredentials("laffo", proxyEncoded);
+    setCredentials(proxyEncoded);
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
             "response_error.xml",
@@ -151,7 +149,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGfeDidntProvideClientCertificate_failsMissingCertificate2200() throws Exception {
-    setCredentials(null, null);
+    setCredentials(null);
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
             "response_error.xml",
@@ -160,7 +158,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodPrimaryCertificate() throws Exception {
-    setCredentials(null, encodedCertString);
+    setCredentials(encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -173,7 +171,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodFailoverCertificate() throws Exception {
-    setCredentials(null, encodedCertString);
+    setCredentials(encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -186,7 +184,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
-    setCredentials(null, encodedCertString);
+    setCredentials(encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -199,7 +197,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testRegistrarHasNoCertificatesOnFile_fails() throws Exception {
-    setCredentials("laffo", "cert");
+    setCredentials("cert");
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -217,7 +215,7 @@ class EppLoginTlsTest extends EppTestCase {
   void testCertificateDoesNotMeetRequirements_fails() throws Exception {
     String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, proxyEncoded);
+    setCredentials(proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -252,7 +250,7 @@ class EppLoginTlsTest extends EppTestCase {
     String proxyEncoded = encodeX509Certificate(certificate);
 
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(null, proxyEncoded);
+    setCredentials(proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -285,7 +283,7 @@ class EppLoginTlsTest extends EppTestCase {
                 + "%s",
             CertificateSamples.SAMPLE_CERT3);
 
-    setCredentials(null, encodeX509CertificateFromPemString(certPem));
+    setCredentials(encodeX509CertificateFromPemString(certPem));
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -309,7 +307,7 @@ class EppLoginTlsTest extends EppTestCase {
                 + "%s",
             CertificateSamples.SAMPLE_CERT);
 
-    setCredentials(null, encodeX509CertificateFromPemString(certPem));
+    setCredentials(encodeX509CertificateFromPemString(certPem));
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")

@@ -17,8 +17,6 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
-import static google.registry.util.X509Utils.getCertificateHash;
-import static google.registry.util.X509Utils.loadCertificate;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.beust.jcommander.Parameter;
@@ -78,11 +76,9 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
             Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
     new TlsCredentials(
             true,
-            Optional.ofNullable(getCertificateHash(loadCertificate(clientCertificatePath))),
             Optional.ofNullable(encodedCertificate),
             Optional.ofNullable(clientIpAddress),
-            certificateChecker,
-            clock)
+            certificateChecker)
         .validate(registrar, password);
     checkState(
         registrar.isLive(), "Registrar %s has non-live state: %s", clientId, registrar.getState());

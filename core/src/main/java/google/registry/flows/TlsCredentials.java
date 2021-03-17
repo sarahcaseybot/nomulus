@@ -32,7 +32,6 @@ import google.registry.flows.certs.CertificateChecker.InsecureCertificateExcepti
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
-import google.registry.util.Clock;
 import google.registry.util.ProxyHttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
@@ -42,7 +41,6 @@ import java.util.Base64;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import org.joda.time.DateTime;
 
 /**
  * Container and validation for TLS certificate and IP-allow-listing.
@@ -65,30 +63,22 @@ import org.joda.time.DateTime;
 public class TlsCredentials implements TransportCredentials {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final DateTime CERT_ENFORCEMENT_START_TIME =
-      DateTime.parse("2021-03-01T16:00:00Z");
 
   private final boolean requireSslCertificates;
-  private final Optional<String> clientCertificateHash;
   private final Optional<String> clientCertificate;
   private final Optional<InetAddress> clientInetAddr;
   private final CertificateChecker certificateChecker;
-  private final Clock clock;
 
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
-      @Header(ProxyHttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
       @Header(ProxyHttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
       @Header(ProxyHttpHeaders.IP_ADDRESS) Optional<String> clientAddress,
-      CertificateChecker certificateChecker,
-      Clock clock) {
+      CertificateChecker certificateChecker) {
     this.requireSslCertificates = requireSslCertificates;
-    this.clientCertificateHash = clientCertificateHash;
     this.clientCertificate = clientCertificate;
     this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
     this.certificateChecker = certificateChecker;
-    this.clock = clock;
   }
 
   static InetAddress parseInetAddress(String asciiAddr) {
@@ -164,7 +154,7 @@ public class TlsCredentials implements TransportCredentials {
     try {
       storedCert = deserializePemCert(registrar.getClientCertificate());
       storedFailoverCert = deserializePemCert(registrar.getFailoverClientCertificate());
-        passedCert = decodeCertString(clientCertificate.get());
+      passedCert = decodeCertString(clientCertificate.get());
     } catch (CertificateException e) {
       throw new IllegalStateException(
           String.format(
@@ -214,7 +204,6 @@ public class TlsCredentials implements TransportCredentials {
   public String toString() {
     return toStringHelper(getClass())
         .add("clientCertificate", clientCertificate.orElse(null))
-        .add("clientCertificateHash", clientCertificateHash.orElse(null))
         .add("clientAddress", clientInetAddr.orElse(null))
         .toString();
   }
