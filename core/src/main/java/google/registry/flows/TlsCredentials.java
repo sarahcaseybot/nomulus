@@ -65,6 +65,7 @@ public class TlsCredentials implements TransportCredentials {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final boolean requireSslCertificates;
+  private final Optional<String> clientCertificateHash;
   private final Optional<String> clientCertificate;
   private final Optional<InetAddress> clientInetAddr;
   private final CertificateChecker certificateChecker;
@@ -72,10 +73,12 @@ public class TlsCredentials implements TransportCredentials {
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
+      @Header(ProxyHttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
       @Header(ProxyHttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
       @Header(ProxyHttpHeaders.IP_ADDRESS) Optional<String> clientAddress,
       CertificateChecker certificateChecker) {
     this.requireSslCertificates = requireSslCertificates;
+    this.clientCertificateHash = clientCertificateHash;
     this.clientCertificate = clientCertificate;
     this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
     this.certificateChecker = certificateChecker;
@@ -204,6 +207,7 @@ public class TlsCredentials implements TransportCredentials {
   public String toString() {
     return toStringHelper(getClass())
         .add("clientCertificate", clientCertificate.orElse(null))
+        .add("clientCertificateHash", clientCertificateHash.orElse(null))
         .add("clientAddress", clientInetAddr.orElse(null))
         .toString();
   }

@@ -73,6 +73,7 @@ class EppLoginTlsTest extends EppTestCase {
     setTransportCredentials(
         new TlsCredentials(
             true,
+            Optional.empty(),
             Optional.ofNullable(clientCertificate),
             Optional.of("192.168.1.100:54321"),
             certificateChecker));
