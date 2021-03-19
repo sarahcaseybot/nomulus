@@ -28,7 +28,7 @@ import google.registry.model.registry.label.ReservedListDualDatabaseDao;
  * reserved list is currently in use on a tld.
  */
 @Parameters(separators = " =", commandDescription = "Deletes a ReservedList from the database.")
-final class DeleteReservedListCommand extends MutatingCommand {
+final class DeleteReservedListCommand extends ConfirmingCommand {
 
   @Parameter(
       names = {"-n", "--name"},
@@ -36,25 +36,23 @@ final class DeleteReservedListCommand extends MutatingCommand {
       required = true)
   private String name;
 
-  private ReservedList existing;
-
   @Override
   protected void init() {
     checkArgument(
         ReservedList.get(name).isPresent(),
         "Cannot delete the reserved list %s because it doesn't exist.",
         name);
-    existing = ReservedList.get(name).get();
+    ReservedList existing = ReservedList.get(name).get();
     ImmutableSet<String> tldsUsedOn = existing.getReferencingTlds();
     checkArgument(
         tldsUsedOn.isEmpty(),
         "Cannot delete reserved list because it is used on these tld(s): %s",
         Joiner.on(", ").join(tldsUsedOn));
-    stageEntityChange(existing, null);
   }
 
   @Override
   protected String execute() {
+    ReservedList existing = ReservedList.get(name).get();
     ReservedListDualDatabaseDao.delete(existing);
     return String.format("Deleted reserved list: %s", name);
   }

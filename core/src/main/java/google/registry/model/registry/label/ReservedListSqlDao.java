@@ -43,7 +43,6 @@ public class ReservedListSqlDao {
 
   /** Deletes a reserved list from Cloud SQL. */
   public static void delete(ReservedList reservedList) {
-    checkArgumentNotNull(reservedList, "Must specify reservedList");
     jpaTm().transact(() -> jpaTm().delete(reservedList));
   }
 
