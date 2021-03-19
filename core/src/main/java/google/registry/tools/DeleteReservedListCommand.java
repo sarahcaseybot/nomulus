@@ -21,12 +21,13 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.model.registry.label.ReservedListDualDatabaseDao;
 
 /**
- * Command to delete a {@link ReservedList} in Datastore. This command will fail if the reserved
- * list is currently in use on a tld.
+ * Command to delete a {@link ReservedList} from the database. This command will fail if the
+ * reserved list is currently in use on a tld.
  */
-@Parameters(separators = " =", commandDescription = "Deletes a ReservedList in Datastore.")
+@Parameters(separators = " =", commandDescription = "Deletes a ReservedList from the database.")
 final class DeleteReservedListCommand extends MutatingCommand {
 
   @Parameter(
@@ -35,18 +36,26 @@ final class DeleteReservedListCommand extends MutatingCommand {
       required = true)
   private String name;
 
+  private ReservedList existing;
+
   @Override
   protected void init() {
     checkArgument(
         ReservedList.get(name).isPresent(),
         "Cannot delete the reserved list %s because it doesn't exist.",
         name);
-    ReservedList existing = ReservedList.get(name).get();
+    existing = ReservedList.get(name).get();
     ImmutableSet<String> tldsUsedOn = existing.getReferencingTlds();
     checkArgument(
         tldsUsedOn.isEmpty(),
         "Cannot delete reserved list because it is used on these tld(s): %s",
         Joiner.on(", ").join(tldsUsedOn));
     stageEntityChange(existing, null);
+  }
+
+  @Override
+  protected String execute() {
+    ReservedListDualDatabaseDao.delete(existing);
+    return String.format("Deleted reserved list: %s", name);
   }
 }
