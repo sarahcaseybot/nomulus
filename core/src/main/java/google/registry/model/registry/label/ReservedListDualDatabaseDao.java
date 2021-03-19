@@ -51,7 +51,7 @@ public class ReservedListDualDatabaseDao {
     }
   }
 
-  /** Delete a reserved list from from databases. */
+  /** Delete a reserved list from both databases. */
   public static void delete(ReservedList reservedList) {
     if (isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       ReservedListDatastoreDao.delete(reservedList);
