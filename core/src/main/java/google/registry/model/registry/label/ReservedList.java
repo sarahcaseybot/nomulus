@@ -122,6 +122,11 @@ public final class ReservedList
       return new ReservedListEntry.Builder(clone(this));
     }
 
+    @Override
+    public String toString() {
+      return String.format("%s,%s # %s", label, reservationType, comment);
+    }
+
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */
     private static class Builder
         extends DomainLabelEntry.Builder<ReservedListEntry, ReservedListEntry.Builder> {
