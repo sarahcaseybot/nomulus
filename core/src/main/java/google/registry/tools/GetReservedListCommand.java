@@ -35,8 +35,7 @@ public class GetReservedListCommand implements CommandWithRemoteApi {
     for (String reservedListName : mainParameters) {
       if (ReservedListDualDatabaseDao.getLatestRevision(reservedListName).isPresent()) {
         System.out.printf(
-            "%s:\n%s\n",
-            reservedListName,
+            "%s\n",
             Streams.stream(
                     ReservedListDualDatabaseDao.getLatestRevision(reservedListName)
                         .get()
