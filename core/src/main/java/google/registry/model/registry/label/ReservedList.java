@@ -124,7 +124,10 @@ public final class ReservedList
 
     @Override
     public String toString() {
-      return String.format("%s,%s # %s", label, reservationType, comment);
+      if (!comment.isEmpty()) {
+        comment = String.format(" # %s", comment);
+      }
+      return String.format("%s,%s%s", label, reservationType, comment);
     }
 
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */

@@ -20,33 +20,33 @@ import com.google.appengine.repackaged.com.google.common.collect.Streams;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListDualDatabaseDao;
 import java.util.Comparator;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /** Retrieves and prints one or more reserved lists. */
 @Parameters(separators = " =", commandDescription = "Show one or more reserved lists")
 public class GetReservedListCommand implements CommandWithRemoteApi {
 
-  @Parameter(description = "Name(s) of the reserved list(s) to retrieve", required = true)
-  private List<String> mainParameters;
+  @Parameter(
+      names = {"-n", "--name"},
+      description = "The name of this reserved list",
+      required = true)
+  String reservedListName;
 
   @Override
   public void run() throws Exception {
-    for (String reservedListName : mainParameters) {
-      if (ReservedListDualDatabaseDao.getLatestRevision(reservedListName).isPresent()) {
-        System.out.printf(
-            "%s\n",
-            Streams.stream(
-                    ReservedListDualDatabaseDao.getLatestRevision(reservedListName)
-                        .get()
-                        .getReservedListEntries()
-                        .values())
-                .sorted(Comparator.comparing(ReservedListEntry::getLabel))
-                .map(ReservedListEntry::toString)
-                .collect(Collectors.joining("\n")));
-      } else {
-        System.out.println(String.format("No list found with name %s.", reservedListName));
-      }
+    if (ReservedListDualDatabaseDao.getLatestRevision(reservedListName).isPresent()) {
+      System.out.printf(
+          "%s\n",
+          Streams.stream(
+                  ReservedListDualDatabaseDao.getLatestRevision(reservedListName)
+                      .get()
+                      .getReservedListEntries()
+                      .values())
+              .sorted(Comparator.comparing(ReservedListEntry::getLabel))
+              .map(ReservedListEntry::toString)
+              .collect(Collectors.joining("\n")));
+    } else {
+      System.out.println(String.format("No list found with name %s.", reservedListName));
     }
   }
 }

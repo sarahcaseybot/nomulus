@@ -27,12 +27,12 @@ public class GetReservedListCommandTest extends CommandTestCase<GetReservedListC
 
   private static final String BASE_LIST_CONTENTS =
       "atlanta,RESERVED_FOR_SPECIFIC_USE # comment\n"
-          + "boston,RESERVED_FOR_SPECIFIC_USE # \n"
+          + "boston,RESERVED_FOR_SPECIFIC_USE\n"
           + "chicago,FULLY_BLOCKED # another comment\n"
           + "dallas,RESERVED_FOR_SPECIFIC_USE # cool city\n"
-          + "elpaso,RESERVED_FOR_SPECIFIC_USE # \n"
+          + "elpaso,RESERVED_FOR_SPECIFIC_USE\n"
           + "fairbanks,RESERVED_FOR_ANCHOR_TENANT # alaska\n"
-          + "greensboro,RESERVED_FOR_SPECIFIC_USE #\n";
+          + "greensboro,RESERVED_FOR_SPECIFIC_USE\n";
 
   @BeforeEach
   void beforeEach() {
@@ -41,21 +41,14 @@ public class GetReservedListCommandTest extends CommandTestCase<GetReservedListC
 
   @TestOfyAndSql
   void testSuccess_list() throws Exception {
-    runCommand("tld_reserved-terms");
+    runCommand("-n=tld_reserved-terms");
     assertStdoutIs(BASE_LIST_CONTENTS);
   }
 
   @TestOfyAndSql
-  void testSuccess_onlyOneExists() throws Exception {
-    runCommand("tld_reserved-terms", "nonexistent");
-    assertStdoutIs(BASE_LIST_CONTENTS + "No list found with name nonexistent.\n");
-  }
-
-  @TestOfyAndSql
   void testFailure_nonexistent() throws Exception {
-    runCommand("nonexistent", "othernonexistent");
-    assertStdoutIs(
-        "No list found with name nonexistent.\nNo list found with name othernonexistent.\n");
+    runCommand("-n=nonexistent");
+    assertStdoutIs("No list found with name nonexistent.\n");
   }
 
   @TestOfyAndSql
