@@ -50,10 +50,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @DualDatabaseTest
 public class PremiumListDualDaoTest extends EntityTestCase {
 
-  // @RegisterExtension
-  // public final AppEngineExtension appEngine =
-  //     AppEngineExtension.builder().withDatastoreAndCloudSql().build();
-
   // Set long persist times on caches so they can be tested (cache times default to 0 in tests).
   @RegisterExtension
   public final TestCacheExtension testCacheExtension =
