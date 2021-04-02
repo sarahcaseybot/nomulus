@@ -147,7 +147,6 @@ public class PremiumListDualDaoTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testGetPremiumPrice_emptyWhenPremiumListDeleted() {
-    fakeClock.advanceBy(Duration.standardDays(1));
     PremiumList toDelete = PremiumListDualDao.getLatestRevision("tld").get();
     PremiumListDualDao.delete(toDelete);
     Truth8.assertThat(PremiumListDualDao.getPremiumPrice("blah", Registry.get("tld"))).isEmpty();
