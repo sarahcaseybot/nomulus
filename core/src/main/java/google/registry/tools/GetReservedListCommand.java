@@ -46,7 +46,7 @@ public class GetReservedListCommand implements CommandWithRemoteApi {
               .map(ReservedListEntry::toString)
               .collect(Collectors.joining("\n")));
     } else {
-      System.out.println(String.format("No list found with name %s.", reservedListName));
+      System.err.printf("No list found with name %s.%n", reservedListName);
     }
   }
 }

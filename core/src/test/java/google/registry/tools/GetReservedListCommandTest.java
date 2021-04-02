@@ -48,7 +48,8 @@ public class GetReservedListCommandTest extends CommandTestCase<GetReservedListC
   @TestOfyAndSql
   void testFailure_nonexistent() throws Exception {
     runCommand("-n=nonexistent");
-    assertStdoutIs("No list found with name nonexistent.\n");
+    assertStdoutIs("");
+    assertInStderr("No list found with name nonexistent.\n");
   }
 
   @TestOfyAndSql
