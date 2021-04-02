@@ -15,7 +15,7 @@
 package google.registry.model.registry.label;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -74,7 +74,7 @@ public class PremiumListDualDaoTest extends EntityTestCase {
                     PrimaryDatabase.CLOUD_SQL),
                 PrimaryDatabaseTransition.class));
 
-    tm().transactNew(() -> ofy().saveWithoutBackup().entity(schedule).now());
+    tm().transactNew(() -> ofyTm().putWithoutBackup(schedule));
   }
 
   @TestOfyAndSql
@@ -147,6 +147,7 @@ public class PremiumListDualDaoTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testGetPremiumPrice_emptyWhenPremiumListDeleted() {
+    fakeClock.advanceBy(Duration.standardDays(1));
     PremiumList toDelete = PremiumListDualDao.getLatestRevision("tld").get();
     PremiumListDualDao.delete(toDelete);
     Truth8.assertThat(PremiumListDualDao.getPremiumPrice("blah", Registry.get("tld"))).isEmpty();
