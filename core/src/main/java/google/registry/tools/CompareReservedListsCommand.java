@@ -20,7 +20,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.beust.jcommander.Parameters;
-import com.google.appengine.repackaged.com.google.common.collect.Streams;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
@@ -28,7 +28,6 @@ import google.registry.model.registry.label.ReservedListDatastoreDao;
 import google.registry.model.registry.label.ReservedListSqlDao;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /** Command to compare all ReservedLists in Datastore to all ReservedLists in Cloud SQL. */
 @Parameters(
@@ -65,29 +64,19 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
             "ReservedList with name %s is present in Datastore, but not in Cloud SQL%n",
             datastoreList.getName());
       } else {
-        String datastoreListString =
-            Streams.stream(
-                    ReservedListDatastoreDao.getLatestRevision(datastoreList.getName())
-                        .get()
-                        .getReservedListEntries()
-                        .values())
-                .sorted(Comparator.comparing(ReservedListEntry::getLabel))
-                .map(ReservedListEntry::toString)
-                .collect(Collectors.joining("\n"));
+        ImmutableMap<String, ReservedListEntry> namesInSql =
+            ReservedListSqlDao.getLatestRevision(datastoreList.getName())
+                .get()
+                .getReservedListEntries();
 
-        String sqlListString =
-            Streams.stream(
-                    ReservedListSqlDao.getLatestRevision(datastoreList.getName())
-                        .get()
-                        .getReservedListEntries()
-                        .values())
-                .sorted(Comparator.comparing(ReservedListEntry::getLabel))
-                .map(ReservedListEntry::toString)
-                .collect(Collectors.joining("\n"));
+        ImmutableMap<String, ReservedListEntry> namesInDatastore =
+            ReservedListDatastoreDao.getLatestRevision(datastoreList.getName())
+                .get()
+                .getReservedListEntries();
 
         // This will only print out the name of the unequal list. GetReservedListCommand should be
         // used to determine what the actual differences are.
-        if (!datastoreListString.equals(sqlListString)) {
+        if (!namesInDatastore.equals(namesInSql)) {
           listsWithDiffs++;
           System.out.printf(
               "ReservedList with name %s has different entries in each database%n",
@@ -107,6 +96,6 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
       }
     }
 
-    System.out.printf("Found %s unequal lists.%n", listsWithDiffs);
+    System.out.printf("Found %s unequal list(s).%n", listsWithDiffs);
   }
 }

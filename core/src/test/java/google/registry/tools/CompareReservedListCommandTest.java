@@ -30,31 +30,24 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link CompareReservedListsCommand}. */
 public class CompareReservedListCommandTest extends CommandTestCase<CompareReservedListsCommand> {
 
-  private ImmutableMap<String, ReservedListEntry> reservations;
-  private ImmutableMap<String, ReservedListEntry> reservations2;
-
   private ReservedList reservedList;
   private ReservedList reservedList2;
 
   @BeforeEach
   void setUp() {
-    reservations =
-        ImmutableMap.of(
-            "food",
-            ReservedListEntry.create("food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null),
-            "music",
-            ReservedListEntry.create("music", ReservationType.FULLY_BLOCKED, "fully blocked"));
-
-    reservations2 =
-        ImmutableMap.of(
-            "candy", ReservedListEntry.create("candy", ReservationType.ALLOWED_IN_SUNRISE, null));
-
     reservedList =
         new ReservedList.Builder()
             .setName("testlist")
             .setLastUpdateTime(fakeClock.nowUtc())
             .setShouldPublish(false)
-            .setReservedListMap(reservations)
+            .setReservedListMap(
+                ImmutableMap.of(
+                    "food",
+                    ReservedListEntry.create(
+                        "food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null),
+                    "music",
+                    ReservedListEntry.create(
+                        "music", ReservationType.FULLY_BLOCKED, "fully blocked")))
             .build();
 
     reservedList2 =
@@ -62,7 +55,10 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
             .setName("testlist2")
             .setLastUpdateTime(fakeClock.nowUtc())
             .setShouldPublish(false)
-            .setReservedListMap(reservations2)
+            .setReservedListMap(
+                ImmutableMap.of(
+                    "candy",
+                    ReservedListEntry.create("candy", ReservationType.ALLOWED_IN_SUNRISE, null)))
             .build();
 
     ReservedListDualDatabaseDao.save(reservedList);
@@ -73,7 +69,7 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
   void test_success() throws Exception {
     runCommand();
     String stdout = getStdoutAsString();
-    assertThat(stdout).isEqualTo("Found 0 unequal lists.\n");
+    assertThat(stdout).isEqualTo("Found 0 unequal list(s).\n");
   }
 
   @Test
@@ -84,7 +80,7 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
     assertThat(stdout)
         .isEqualTo(
             "ReservedList with name testlist is present in Datastore, but not in Cloud SQL\n"
-                + "Found 1 unequal lists.\n");
+                + "Found 1 unequal list(s).\n");
   }
 
   @Test
@@ -95,7 +91,7 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
     assertThat(stdout)
         .isEqualTo(
             "ReservedList with name testlist is present in Cloud SQL, but not in Datastore\n"
-                + "Found 1 unequal lists.\n");
+                + "Found 1 unequal list(s).\n");
   }
 
   @Test
@@ -117,7 +113,7 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
     assertThat(stdout)
         .isEqualTo(
             "ReservedList with name testlist has different entries in each database\n"
-                + "Found 1 unequal lists.\n");
+                + "Found 1 unequal list(s).\n");
   }
 
   @Test
@@ -141,6 +137,6 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
         .isEqualTo(
             "ReservedList with name testlist has different entries in each database\n"
                 + "ReservedList with name testlist2 is present in Cloud SQL, but not in Datastore\n"
-                + "Found 2 unequal lists.\n");
+                + "Found 2 unequal list(s).\n");
   }
 }
