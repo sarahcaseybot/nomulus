@@ -61,7 +61,7 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
       if (!sqlList.isPresent()) {
         listsWithDiffs++;
         System.out.printf(
-            "ReservedList with name %s is present in Datastore, but not in Cloud SQL%n",
+            "ReservedList '%s' is present in Datastore, but not in Cloud SQL.%n",
             datastoreList.getName());
       } else {
         ImmutableMap<String, ReservedListEntry> namesInSql =
@@ -79,7 +79,7 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
         if (!namesInDatastore.equals(namesInSql)) {
           listsWithDiffs++;
           System.out.printf(
-              "ReservedList with name %s has different entries in each database%n",
+              "ReservedList '%s' has different entries in each database.%n",
               datastoreList.getName());
         }
       }
@@ -91,11 +91,11 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
       if (!datastoreList.isPresent()) {
         listsWithDiffs++;
         System.out.printf(
-            "ReservedList with name %s is present in Cloud SQL, but not in Datastore%n",
+            "ReservedList '%s' is present in Cloud SQL, but not in Datastore.%n",
             sqlList.getName());
       }
     }
 
-    System.out.printf("Found %s unequal list(s).%n", listsWithDiffs);
+    System.out.printf("Found %d unequal list(s).%n", listsWithDiffs);
   }
 }

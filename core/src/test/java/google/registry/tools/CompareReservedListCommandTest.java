@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.testing.DatabaseHelper.persistReservedList;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservationType;
@@ -24,73 +25,45 @@ import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListDatastoreDao;
 import google.registry.model.registry.label.ReservedListDualDatabaseDao;
+import google.registry.model.registry.label.ReservedListSqlDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CompareReservedListsCommand}. */
 public class CompareReservedListCommandTest extends CommandTestCase<CompareReservedListsCommand> {
 
-  private ReservedList reservedList;
-  private ReservedList reservedList2;
-
   @BeforeEach
   void setUp() {
-    reservedList =
-        new ReservedList.Builder()
-            .setName("testlist")
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .setShouldPublish(false)
-            .setReservedListMap(
-                ImmutableMap.of(
-                    "food",
-                    ReservedListEntry.create(
-                        "food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null),
-                    "music",
-                    ReservedListEntry.create(
-                        "music", ReservationType.FULLY_BLOCKED, "fully blocked")))
-            .build();
-
-    reservedList2 =
-        new ReservedList.Builder()
-            .setName("testlist2")
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .setShouldPublish(false)
-            .setReservedListMap(
-                ImmutableMap.of(
-                    "candy",
-                    ReservedListEntry.create("candy", ReservationType.ALLOWED_IN_SUNRISE, null)))
-            .build();
-
-    ReservedListDualDatabaseDao.save(reservedList);
-    ReservedListDualDatabaseDao.save(reservedList2);
+    persistReservedList(
+        "testlist", "food, RESERVED_FOR_SPECIFIC_USE", "music, FULLY_BLOCKED # fully blocked");
+    persistReservedList("testlist2", "candy, ALLOWED_IN_SUNRISE");
   }
 
   @Test
   void test_success() throws Exception {
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout).isEqualTo("Found 0 unequal list(s).\n");
+    assertThat(getStdoutAsString()).isEqualTo("Found 0 unequal list(s).\n");
   }
 
   @Test
   void test_listMissingFromCloudSql() throws Exception {
-    jpaTm().transact(() -> jpaTm().delete(reservedList));
+    jpaTm().transact(() -> jpaTm().delete(ReservedListSqlDao.getLatestRevision("testlist").get()));
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout)
+    assertThat(getStdoutAsString())
         .isEqualTo(
-            "ReservedList with name testlist is present in Datastore, but not in Cloud SQL\n"
+            "ReservedList 'testlist' is present in Datastore, but not in Cloud SQL.\n"
                 + "Found 1 unequal list(s).\n");
   }
 
   @Test
   void test_listMissingFromDatastore() throws Exception {
-    ofyTm().transact(() -> ofyTm().delete(reservedList));
+    ofyTm()
+        .transact(
+            () -> ofyTm().delete(ReservedListDatastoreDao.getLatestRevision("testlist").get()));
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout)
+    assertThat(getStdoutAsString())
         .isEqualTo(
-            "ReservedList with name testlist is present in Cloud SQL, but not in Datastore\n"
+            "ReservedList 'testlist' is present in Cloud SQL, but not in Datastore.\n"
                 + "Found 1 unequal list(s).\n");
   }
 
@@ -109,16 +82,17 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
             .build();
     ReservedListDatastoreDao.save(secondList);
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout)
+    assertThat(getStdoutAsString())
         .isEqualTo(
-            "ReservedList with name testlist has different entries in each database\n"
+            "ReservedList 'testlist' has different entries in each database.\n"
                 + "Found 1 unequal list(s).\n");
   }
 
   @Test
   void test_listsDifferAndMissing() throws Exception {
-    ofyTm().transact(() -> ofyTm().delete(reservedList2));
+    ofyTm()
+        .transact(
+            () -> ofyTm().delete(ReservedListDualDatabaseDao.getLatestRevision("testlist2").get()));
     ImmutableMap<String, ReservedListEntry> newReservations =
         ImmutableMap.of(
             "food",
@@ -132,11 +106,10 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
             .build();
     ReservedListDatastoreDao.save(secondList);
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout)
+    assertThat(getStdoutAsString())
         .isEqualTo(
-            "ReservedList with name testlist has different entries in each database\n"
-                + "ReservedList with name testlist2 is present in Cloud SQL, but not in Datastore\n"
+            "ReservedList 'testlist' has different entries in each database.\n"
+                + "ReservedList 'testlist2' is present in Cloud SQL, but not in Datastore.\n"
                 + "Found 2 unequal list(s).\n");
   }
 }
