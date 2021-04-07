@@ -75,6 +75,8 @@ public class PremiumListDualDaoTest extends EntityTestCase {
                 PrimaryDatabaseTransition.class));
 
     tm().transactNew(() -> ofyTm().putWithoutBackup(schedule));
+
+    fakeClock.advanceOneMilli();
   }
 
   @TestOfyAndSql
