@@ -61,7 +61,7 @@ public class PremiumListDualDaoTest extends EntityTestCase {
   @BeforeEach
   void before() {
     createTld("tld");
-
+    fakeClock.setAutoIncrementStep(Duration.millis(1));
     fakeClock.setTo(DateTime.parse("1984-12-21T00:00:00.000Z"));
     DatabaseTransitionSchedule schedule =
         DatabaseTransitionSchedule.create(
@@ -75,8 +75,6 @@ public class PremiumListDualDaoTest extends EntityTestCase {
                 PrimaryDatabaseTransition.class));
 
     tm().transactNew(() -> ofyTm().putWithoutBackup(schedule));
-
-    fakeClock.advanceOneMilli();
   }
 
   @TestOfyAndSql
