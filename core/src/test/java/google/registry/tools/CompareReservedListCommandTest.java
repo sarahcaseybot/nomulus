@@ -108,8 +108,8 @@ public class CompareReservedListCommandTest extends CommandTestCase<CompareReser
     runCommand();
     assertThat(getStdoutAsString())
         .isEqualTo(
-            "ReservedList 'testlist' has different entries in each database.\n"
-                + "ReservedList 'testlist2' is present in Cloud SQL, but not in Datastore.\n"
+            "ReservedList 'testlist2' is present in Cloud SQL, but not in Datastore.\n"
+                + "ReservedList 'testlist' has different entries in each database.\n"
                 + "Found 2 unequal list(s).\n");
   }
 }

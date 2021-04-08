@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -22,12 +22,11 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListDatastoreDao;
 import google.registry.model.registry.label.ReservedListSqlDao;
-import java.util.Comparator;
-import java.util.Optional;
 
 /** Command to compare all ReservedLists in Datastore to all ReservedLists in Cloud SQL. */
 @Parameters(
@@ -37,62 +36,49 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    ImmutableSet<ReservedList> datastoreLists =
-        ImmutableSet.copyOf(
-            ofy().load().type(ReservedList.class).ancestor(getCrossTldKey()).list());
+    ImmutableSet<String> datastoreLists =
+        ofy().load().type(ReservedList.class).ancestor(getCrossTldKey()).list().stream()
+            .map(ReservedList::getName)
+            .collect(toImmutableSet());
 
-    ImmutableSet<ReservedList> cloudSqlLists =
+    ImmutableSet<String> cloudSqlLists =
         jpaTm()
             .transact(
                 () ->
                     jpaTm().loadAllOf(ReservedList.class).stream()
                         .map(ReservedList::getName)
-                        .map(ReservedListSqlDao::getLatestRevision)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(
-                            toImmutableSortedSet(Comparator.comparing(ReservedList::getName))));
+                        .collect(toImmutableSet()));
+
+    ImmutableSet<String> notInCloudSql =
+        Sets.difference(datastoreLists, cloudSqlLists).immutableCopy();
+    ImmutableSet<String> notInDatastore =
+        Sets.difference(cloudSqlLists, datastoreLists).immutableCopy();
 
     int listsWithDiffs = 0;
 
-    for (ReservedList datastoreList : datastoreLists) {
-      Optional<ReservedList> sqlList =
-          ReservedListSqlDao.getLatestRevision(datastoreList.getName());
-      if (!sqlList.isPresent()) {
-        listsWithDiffs++;
-        System.out.printf(
-            "ReservedList '%s' is present in Datastore, but not in Cloud SQL.%n",
-            datastoreList.getName());
-      } else {
-        ImmutableMap<String, ReservedListEntry> namesInSql =
-            ReservedListSqlDao.getLatestRevision(datastoreList.getName())
-                .get()
-                .getReservedListEntries();
-
-        ImmutableMap<String, ReservedListEntry> namesInDatastore =
-            ReservedListDatastoreDao.getLatestRevision(datastoreList.getName())
-                .get()
-                .getReservedListEntries();
-
-        // This will only print out the name of the unequal list. GetReservedListCommand should be
-        // used to determine what the actual differences are.
-        if (!namesInDatastore.equals(namesInSql)) {
-          listsWithDiffs++;
-          System.out.printf(
-              "ReservedList '%s' has different entries in each database.%n",
-              datastoreList.getName());
-        }
-      }
+    for (String listName : notInCloudSql) {
+      listsWithDiffs++;
+      System.out.printf(
+          "ReservedList '%s' is present in Datastore, but not in Cloud SQL.%n", listName);
+    }
+    for (String listName : notInDatastore) {
+      listsWithDiffs++;
+      System.out.printf(
+          "ReservedList '%s' is present in Cloud SQL, but not in Datastore.%n", listName);
     }
 
-    for (ReservedList sqlList : cloudSqlLists) {
-      Optional<ReservedList> datastoreList =
-          ReservedListDatastoreDao.getLatestRevision(sqlList.getName());
-      if (!datastoreList.isPresent()) {
+    for (String listName : Sets.intersection(datastoreLists, cloudSqlLists)) {
+      ImmutableMap<String, ReservedListEntry> namesInSql =
+          ReservedListSqlDao.getLatestRevision(listName).get().getReservedListEntries();
+
+      ImmutableMap<String, ReservedListEntry> namesInDatastore =
+          ReservedListDatastoreDao.getLatestRevision(listName).get().getReservedListEntries();
+
+      // This will only print out the name of the unequal list. GetReservedListCommand should be
+      // used to determine what the actual differences are.
+      if (!namesInDatastore.equals(namesInSql)) {
         listsWithDiffs++;
-        System.out.printf(
-            "ReservedList '%s' is present in Cloud SQL, but not in Datastore.%n",
-            sqlList.getName());
+        System.out.printf("ReservedList '%s' has different entries in each database.%n", listName);
       }
     }
 
