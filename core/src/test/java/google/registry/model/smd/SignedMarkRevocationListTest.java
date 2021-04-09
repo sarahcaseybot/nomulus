@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -62,7 +63,8 @@ public class SignedMarkRevocationListTest {
   void testEmpty() {
     // When Datastore is empty, it should give us an empty thing.
     assertThat(SignedMarkRevocationList.get())
-        .isEqualTo(SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
+        .isEqualTo(
+            SignedMarkRevocationList.create(DateTime.now(DateTimeZone.UTC), ImmutableMap.of()));
   }
 
   @Test

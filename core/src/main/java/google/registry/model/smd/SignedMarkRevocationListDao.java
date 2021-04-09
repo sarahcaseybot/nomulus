@@ -38,6 +38,7 @@ import google.registry.util.CollectionUtils;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 public class SignedMarkRevocationListDao {
 
@@ -53,7 +54,7 @@ public class SignedMarkRevocationListDao {
   static SignedMarkRevocationList load() {
     Optional<SignedMarkRevocationList> primaryList = loadFromCloudSql();
     if (!primaryList.isPresent()) {
-      throw new IllegalStateException("SignedMarkRevocationList not found in Cloud SQL.");
+      return SignedMarkRevocationList.create(DateTime.now(DateTimeZone.UTC), ImmutableMap.of());
     }
     suppressExceptionUnlessInTest(
         () -> loadAndCompare(primaryList.get()),
