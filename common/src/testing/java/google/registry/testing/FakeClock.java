@@ -57,6 +57,8 @@ public final class FakeClock implements Clock {
    * Sets the increment applied to the clock whenever it is queried. The increment is zero by
    * default: the clock is left unchanged when queried.
    *
+   * <p>Passing a duration of zero to this method effectively unsets the auto increment mode.
+   *
    * @param autoIncrementStep the new auto increment duration
    * @return this
    */

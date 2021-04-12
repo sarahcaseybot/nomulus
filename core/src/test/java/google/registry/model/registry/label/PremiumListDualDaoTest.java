@@ -43,6 +43,7 @@ import google.registry.testing.TestCacheExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -75,6 +76,11 @@ public class PremiumListDualDaoTest extends EntityTestCase {
                 PrimaryDatabaseTransition.class));
 
     tm().transactNew(() -> ofyTm().putWithoutBackup(schedule));
+  }
+
+  @AfterEach
+  void after() {
+    fakeClock.setAutoIncrementStep(Duration.ZERO);
   }
 
   @TestOfyAndSql
