@@ -49,19 +49,14 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
                         .map(ReservedList::getName)
                         .collect(toImmutableSet()));
 
-    ImmutableSet<String> notInCloudSql =
-        Sets.difference(datastoreLists, cloudSqlLists).immutableCopy();
-    ImmutableSet<String> notInDatastore =
-        Sets.difference(cloudSqlLists, datastoreLists).immutableCopy();
-
     int listsWithDiffs = 0;
 
-    for (String listName : notInCloudSql) {
+    for (String listName : Sets.difference(datastoreLists, cloudSqlLists).immutableCopy()) {
       listsWithDiffs++;
       System.out.printf(
           "ReservedList '%s' is present in Datastore, but not in Cloud SQL.%n", listName);
     }
-    for (String listName : notInDatastore) {
+    for (String listName : Sets.difference(cloudSqlLists, datastoreLists).immutableCopy()) {
       listsWithDiffs++;
       System.out.printf(
           "ReservedList '%s' is present in Cloud SQL, but not in Datastore.%n", listName);
