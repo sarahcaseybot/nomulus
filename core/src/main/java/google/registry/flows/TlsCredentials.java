@@ -117,30 +117,8 @@ public class TlsCredentials implements TransportCredentials {
     throw new BadRegistrarIpAddressException();
   }
 
-  /**
-   * Verifies client SSL certificate is permitted to issue commands as {@code registrar}.
-   *
-   * @throws MissingRegistrarCertificateException if frontend didn't send certificate header
-   * @throws BadRegistrarCertificateException if registrar requires certificate and it didn't match
-   */
-  private void validateCertificate(Registrar registrar) throws AuthenticationErrorException {
-    String passedCert =
-        clientCertificateHash.equals(registrar.getClientCertificateHash())
-            ? registrar.getClientCertificate().get()
-            : registrar.getFailoverClientCertificate().get();
-    try {
-      certificateChecker.validateCertificate(passedCert);
-    } catch (InsecureCertificateException e) {
-      logger.atWarning().log(
-          "Registrar certificate used for %s does not meet certificate requirements: %s",
-          registrar.getClientId(), e.getMessage());
-      throw new CertificateContainsSecurityViolationsException(e);
-    }
-  }
-
   @VisibleForTesting
   void validateCertificateHash(Registrar registrar) throws AuthenticationErrorException {
-    // Check the certificate hash as a failover
     if (!registrar.getClientCertificateHash().isPresent()
         && !registrar.getFailoverClientCertificateHash().isPresent()) {
       if (requireSslCertificates) {
@@ -169,7 +147,18 @@ public class TlsCredentials implements TransportCredentials {
       throw new BadRegistrarCertificateException();
     }
     if (requireSslCertificates) {
-      validateCertificate(registrar);
+      String passedCert =
+          clientCertificateHash.equals(registrar.getClientCertificateHash())
+              ? registrar.getClientCertificate().get()
+              : registrar.getFailoverClientCertificate().get();
+      try {
+        certificateChecker.validateCertificate(passedCert);
+      } catch (InsecureCertificateException e) {
+        logger.atWarning().log(
+            "Registrar certificate used for %s does not meet certificate requirements: %s",
+            registrar.getClientId(), e.getMessage());
+        throw new CertificateContainsSecurityViolationsException(e);
+      }
     }
   }
 
