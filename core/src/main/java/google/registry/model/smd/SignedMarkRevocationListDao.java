@@ -25,11 +25,9 @@ public class SignedMarkRevocationListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /**
-   * Loads the {@link SignedMarkRevocationList}.
-   */
+  /** Loads the {@link SignedMarkRevocationList}. */
   static SignedMarkRevocationList load() {
-    Optional<SignedMarkRevocationList> primaryList =
+    Optional<SignedMarkRevocationList> smdrl =
         jpaTm()
             .transact(
                 () -> {
@@ -46,13 +44,10 @@ public class SignedMarkRevocationListDao {
                       .getResultStream()
                       .findFirst();
                 });
-    return primaryList.orElseGet(
-        () -> SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
+    return smdrl.orElseGet(() -> SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
   }
 
-  /**
-   * Save the given {@link SignedMarkRevocationList}
-   */
+  /** Save the given {@link SignedMarkRevocationList} */
   static void save(SignedMarkRevocationList signedMarkRevocationList) {
     jpaTm().transact(() -> jpaTm().insert(signedMarkRevocationList));
     logger.atInfo().log(

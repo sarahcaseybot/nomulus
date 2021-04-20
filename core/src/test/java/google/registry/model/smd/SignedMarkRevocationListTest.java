@@ -15,9 +15,7 @@
 package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.smd.SignedMarkRevocationList.SHARD_SIZE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,24 +35,6 @@ public class SignedMarkRevocationListTest {
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
-
-  @Test
-  void testUnshardedSaveFails() {
-    // Our @Entity's @OnSave method will notice that this shouldn't be saved.
-    assertThrows(
-        SignedMarkRevocationList.UnshardedSaveException.class,
-        () ->
-            tm()
-                .transact(
-                    () -> {
-                      SignedMarkRevocationList smdrl =
-                          SignedMarkRevocationList.create(
-                              tm().getTransactionTime(),
-                              ImmutableMap.of("a", tm().getTransactionTime()));
-                      smdrl.id = 1; // Without an id this won't save anyways.
-                      ofy().saveWithoutBackup().entity(smdrl).now();
-                    }));
-  }
 
   @Test
   void testEmpty() {

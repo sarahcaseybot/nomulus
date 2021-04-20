@@ -31,7 +31,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   @Test
-  void testSave_cloudSqlPrimary_success() {
+  void testSave_success() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
@@ -41,7 +41,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   }
 
   @Test
-  void testSaveAndLoad_cloudSqlPrimary_emptyList() {
+  void testSaveAndLoad_emptyList() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(fakeClock.nowUtc(), ImmutableMap.of());
     SignedMarkRevocationListDao.save(list);
@@ -50,7 +50,7 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   }
 
   @Test
-  void testSave_cloudSqlPrimary_multipleVersions() {
+  void testSave_multipleVersions() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
