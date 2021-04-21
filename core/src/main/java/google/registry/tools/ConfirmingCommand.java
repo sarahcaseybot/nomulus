@@ -20,7 +20,7 @@ import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
 
 /** A {@link Command} that implements a confirmation step before executing. */
-public abstract class ConfirmingCommand implements Command {
+public abstract class ConfirmingCommand implements CommandWithRemoteApi {
 
   @Parameter(
       names = {"-f", "--force"},
