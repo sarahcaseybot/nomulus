@@ -83,7 +83,7 @@ public class SignedMarkRevocationListTest extends EntityTestCase {
 
   @Test
   void test_isSmdRevoked_present() {
-    final int rows = 100001;
+    final int rows = 10001;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
     assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.nowUtc())).isTrue();
@@ -92,7 +92,7 @@ public class SignedMarkRevocationListTest extends EntityTestCase {
 
   @Test
   void test_isSmdRevoked_future() {
-    final int rows = 100000;
+    final int rows = 10000;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.advanceOneMilli();
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
@@ -102,7 +102,7 @@ public class SignedMarkRevocationListTest extends EntityTestCase {
 
   @Test
   void test_isSmdRevoked_past() {
-    final int rows = 100000;
+    final int rows = 10000;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.setTo(clock.nowUtc().minusMillis(1));
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isFalse();
