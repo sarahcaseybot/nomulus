@@ -27,7 +27,7 @@ import javax.inject.Inject;
 @Parameters(
     separators = " =",
     commandDescription = "Migrate values of secrets in KmsKeyring to Secret Manager.")
-public class MigrateKmsKeyringCommand extends ConfirmingCommand implements CommandWithRemoteApi {
+public class MigrateKmsKeyringCommand extends ConfirmingCommand {
 
   @Inject Keyring keyring;
 

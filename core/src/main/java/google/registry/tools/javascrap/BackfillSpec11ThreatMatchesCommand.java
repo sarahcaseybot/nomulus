@@ -33,7 +33,6 @@ import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
 import google.registry.reporting.spec11.RegistrarThreatMatches;
 import google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParser;
-import google.registry.tools.CommandWithRemoteApi;
 import google.registry.tools.ConfirmingCommand;
 import google.registry.util.Clock;
 import java.io.IOException;
@@ -58,8 +57,7 @@ import org.joda.time.LocalDate;
     commandDescription =
         "Backfills Spec11 threat match entries from the old and deprecated GCS JSON files to the "
             + "Cloud SQL database.")
-public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
-    implements CommandWithRemoteApi {
+public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand {
 
   private static final LocalDate START_DATE = new LocalDate(2019, 1, 1);
 
