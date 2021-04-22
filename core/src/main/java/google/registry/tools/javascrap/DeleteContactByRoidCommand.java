@@ -27,6 +27,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
+import google.registry.tools.CommandWithRemoteApi;
 import google.registry.tools.ConfirmingCommand;
 import google.registry.util.SystemClock;
 import java.util.List;
@@ -38,7 +39,7 @@ import java.util.Objects;
  * <p>This is a short-term tool for race condition clean up while the bug is being fixed.
  */
 @Parameters(separators = " =", commandDescription = "Delete a contact by its ROID.")
-public class DeleteContactByRoidCommand extends ConfirmingCommand {
+public class DeleteContactByRoidCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
   @Parameter(names = "--roid", description = "The roid of the contact to be deleted.")
   String roid;

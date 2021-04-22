@@ -32,7 +32,7 @@ import google.registry.model.registry.Registry.TldType;
  * <p>This command will fail if any domains are currently registered on the TLD.
  */
 @Parameters(separators = " =", commandDescription = "Delete a TLD from Datastore.")
-final class DeleteTldCommand extends ConfirmingCommand {
+final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
   private Registry registry;
 

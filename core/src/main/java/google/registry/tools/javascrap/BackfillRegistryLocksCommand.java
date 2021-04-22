@@ -35,6 +35,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.schema.domain.RegistryLock;
+import google.registry.tools.CommandWithRemoteApi;
 import google.registry.tools.ConfirmingCommand;
 import google.registry.util.Clock;
 import google.registry.util.StringGenerator;
@@ -55,7 +56,8 @@ import org.joda.time.DateTime;
     commandDescription =
         "Backfills RegistryLock objects for specified domain resource IDs that are locked but don't"
             + " already have a corresponding RegistryLock object.")
-public class BackfillRegistryLocksCommand extends ConfirmingCommand {
+public class BackfillRegistryLocksCommand extends ConfirmingCommand
+    implements CommandWithRemoteApi {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final int VERIFICATION_CODE_LENGTH = 32;

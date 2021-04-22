@@ -57,7 +57,7 @@ import org.joda.time.DateTime;
  */
 @Parameters(separators = " =", commandDescription = "Unrenew a domain.")
 @NonFinalForTesting
-class UnrenewDomainCommand extends ConfirmingCommand {
+class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
   @Parameter(
       names = {"-p", "--period"},

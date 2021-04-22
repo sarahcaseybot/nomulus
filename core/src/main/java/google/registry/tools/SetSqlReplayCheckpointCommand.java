@@ -26,7 +26,8 @@ import org.joda.time.DateTime;
 
 /** Command to set {@link SqlReplayCheckpoint} to a particular, post-initial-population time. */
 @Parameters(separators = " =", commandDescription = "Set SqlReplayCheckpoint to a particular time")
-public class SetSqlReplayCheckpointCommand extends ConfirmingCommand {
+public class SetSqlReplayCheckpointCommand extends ConfirmingCommand
+    implements CommandWithRemoteApi {
 
   @Parameter(description = "Time to which SqlReplayCheckpoint will be set", required = true)
   List<DateTime> mainParameters;
