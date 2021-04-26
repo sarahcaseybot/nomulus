@@ -20,7 +20,6 @@ import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.EntityTestCase;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
@@ -28,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link SignedMarkRevocationList}. */
-public class SignedMarkRevocationListTest extends EntityTestCase {
+public class SignedMarkRevocationListTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
@@ -64,7 +63,7 @@ public class SignedMarkRevocationListTest extends EntityTestCase {
 
   @Test
   void test_isSmdRevoked_garbage() {
-    SignedMarkRevocationList smdrl = createSaveGetHelper(10001);
+    SignedMarkRevocationList smdrl = createSaveGetHelper(100);
     assertThat(smdrl.getCreationTime()).isEqualTo(clock.nowUtc());
     assertThat(smdrl.isSmdRevoked("rofl", clock.nowUtc())).isFalse();
     assertThat(smdrl.isSmdRevoked("31337", clock.nowUtc())).isFalse();
@@ -83,7 +82,7 @@ public class SignedMarkRevocationListTest extends EntityTestCase {
 
   @Test
   void test_isSmdRevoked_present() {
-    final int rows = 10001;
+    final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
     assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.nowUtc())).isTrue();
@@ -92,7 +91,7 @@ public class SignedMarkRevocationListTest extends EntityTestCase {
 
   @Test
   void test_isSmdRevoked_future() {
-    final int rows = 10000;
+    final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.advanceOneMilli();
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
@@ -102,7 +101,7 @@ public class SignedMarkRevocationListTest extends EntityTestCase {
 
   @Test
   void test_isSmdRevoked_past() {
-    final int rows = 10000;
+    final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.setTo(clock.nowUtc().minusMillis(1));
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isFalse();
