@@ -15,6 +15,7 @@
 package google.registry.model.registry.label;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
@@ -22,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.hash.BloomFilter;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.testing.AppEngineExtension;
@@ -62,6 +64,18 @@ public class PremiumListTest {
   void testSave_invalidCurrencySymbol() {
     assertThrows(
         IllegalArgumentException.class, () -> persistReservedList("gtld1", "lol,XBTC 200"));
+  }
+
+  @Test
+  void testBloomFilter() {
+    PremiumList pl = PremiumListDualDao.getLatestRevision("tld").get();
+    BloomFilter<String> bloomFilter = pl.getBloomFilter();
+    assertThat(bloomFilter.mightContain("notpremium")).isFalse();
+    for (String label : ImmutableList.of("rich", "lol", "johnny-be-goode", "icann")) {
+      assertWithMessage(label + " should be a probable premium")
+          .that(bloomFilter.mightContain(label))
+          .isTrue();
+    }
   }
 
   @Test
