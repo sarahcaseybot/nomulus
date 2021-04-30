@@ -101,7 +101,6 @@ public class EppTestCase {
         String inputFilename, @Nullable Map<String, String> inputSubstitutions) {
       this.inputFilename = inputFilename;
       this.inputSubstitutions = inputSubstitutions;
-      // this.now = DateTime.now(UTC);
       this.now = clock.nowUtc();
     }
 

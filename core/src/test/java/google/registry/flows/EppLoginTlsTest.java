@@ -228,7 +228,7 @@ class EppLoginTlsTest extends EppTestCase {
   void testCertificateDoesNotMeetMultipleRequirements_fails() throws Exception {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
-            "test", clock.nowUtc().minusDays(5000), clock.nowUtc().minusDays(100))
+                "test", clock.nowUtc().minusDays(5000), clock.nowUtc().minusDays(100))
             .cert();
 
     StringWriter sw = new StringWriter();
