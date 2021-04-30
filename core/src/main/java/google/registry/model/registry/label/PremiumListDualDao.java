@@ -14,7 +14,7 @@
 
 package google.registry.model.registry.label;
 
-import static avro.shaded.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
 
