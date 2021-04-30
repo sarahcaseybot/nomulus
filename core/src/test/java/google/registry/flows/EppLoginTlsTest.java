@@ -19,7 +19,6 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.X509Utils.getCertificateHash;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -52,13 +51,7 @@ class EppLoginTlsTest extends EppTestCase {
   @Order(value = Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
-  private final CertificateChecker certificateChecker =
-      new CertificateChecker(
-          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
-          30,
-          2048,
-          ImmutableSet.of("secp256r1", "secp384r1"),
-          clock);
+  private CertificateChecker certificateChecker;
 
   void setCredentials(String clientCertificateHash) {
     setTransportCredentials(
@@ -71,16 +64,24 @@ class EppLoginTlsTest extends EppTestCase {
 
   @BeforeEach
   void beforeEach() {
+    clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
+    certificateChecker =
+        new CertificateChecker(
+            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            30,
+            2048,
+            ImmutableSet.of("secp256r1", "secp384r1"),
+            clock);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, DateTime.now(UTC))
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT3, clock.nowUtc())
             .build());
     // Set a cert for the second registrar, or else any cert will be allowed for login.
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(CertificateSamples.SAMPLE_CERT2, DateTime.now(UTC))
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
             .build());
   }
 
@@ -96,6 +97,7 @@ class EppLoginTlsTest extends EppTestCase {
     setCredentials(SAMPLE_CERT3_HASH);
     // For TLS login, we also check the epp xml password.
     assertThatLogin("NewRegistrar", "incorrect")
+        .atTime(clock.nowUtc())
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of("CODE", "2200", "MSG", "Registrar password is incorrect"));
@@ -109,6 +111,7 @@ class EppLoginTlsTest extends EppTestCase {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
     assertThatLogin("TheRegistrar", "password2")
+        .atTime(clock.nowUtc())
         .hasResponse(
             "response_error.xml",
             ImmutableMap.of(
@@ -147,7 +150,7 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testGoodPrimaryCertificate() throws Exception {
     setCredentials(SAMPLE_CERT3_HASH);
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -160,7 +163,7 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testGoodFailoverCertificate() throws Exception {
     setCredentials(SAMPLE_CERT3_HASH);
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -173,7 +176,7 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
     setCredentials(SAMPLE_CERT3_HASH);
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -186,7 +189,7 @@ class EppLoginTlsTest extends EppTestCase {
   @Test
   void testRegistrarHasNoCertificatesOnFile_fails() throws Exception {
     setCredentials("laffo");
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -225,7 +228,7 @@ class EppLoginTlsTest extends EppTestCase {
   void testCertificateDoesNotMeetMultipleRequirements_fails() throws Exception {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
-                "test", clock.nowUtc().plusDays(100), clock.nowUtc().plusDays(5000))
+            "test", clock.nowUtc().minusDays(5000), clock.nowUtc().minusDays(100))
             .cert();
 
     StringWriter sw = new StringWriter();
