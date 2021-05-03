@@ -51,7 +51,13 @@ class EppLoginTlsTest extends EppTestCase {
   @Order(value = Integer.MAX_VALUE)
   final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
-  private CertificateChecker certificateChecker;
+  private final CertificateChecker certificateChecker =
+      new CertificateChecker(
+          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          30,
+          2048,
+          ImmutableSet.of("secp256r1", "secp384r1"),
+          clock);
 
   void setCredentials(String clientCertificateHash) {
     setTransportCredentials(
@@ -65,13 +71,6 @@ class EppLoginTlsTest extends EppTestCase {
   @BeforeEach
   void beforeEach() {
     clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
-    certificateChecker =
-        new CertificateChecker(
-            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
-            30,
-            2048,
-            ImmutableSet.of("secp256r1", "secp384r1"),
-            clock);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
