@@ -20,11 +20,20 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.EntityTestCase;
+import google.registry.testing.SystemPropertyExtension;
+import org.joda.time.Duration;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ClaimsListDualDatabaseDao}. */
 public class ClaimsListDualDatabaseDaoTest extends EntityTestCase {
+
+  @RegisterExtension
+  @Order(value = Integer.MAX_VALUE)
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @Test
   void testGetList_missingOfy() {
@@ -58,6 +67,16 @@ public class ClaimsListDualDatabaseDaoTest extends EntityTestCase {
   @Test
   void testGet_empty() {
     assertThat(tm().transact(ClaimsListDualDatabaseDao::get).getLabelsToKeys()).isEmpty();
+  }
+
+  @Test
+  void testGetList_missingOfy_notInTest() {
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
+    fakeClock.advanceBy(Duration.standardDays(5));
+    ClaimsListSqlDao.save(createClaimsList());
+    // Shouldn't fail in production
+    assertThat(ClaimsListDualDatabaseDao.get().getLabelsToKeys())
+        .isEqualTo(createClaimsList().getLabelsToKeys());
   }
 
   private ClaimsListShard createClaimsList() {

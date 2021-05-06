@@ -32,8 +32,8 @@ import java.util.Optional;
  * <p>For write actions, this class will perform the action against Cloud SQL then, after that
  * success or failure, against Datastore. If Datastore fails, an error is logged (but not thrown).
  *
- * <p>For read actions, we will log if the primary and secondary databases have different values (or
- * if the retrieval from Datastore fails).
+ * <p>For read actions, we will log if the two databases have different values (or if the retrieval
+ * from Datastore fails).
  */
 public class ClaimsListDualDatabaseDao {
 
