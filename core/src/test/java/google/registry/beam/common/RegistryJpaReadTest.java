@@ -78,26 +78,12 @@ public class RegistryJpaReadTest {
       ContactResource contact = DatabaseHelper.newContactResource("contact_" + i);
       builder.add(contact);
     }
-    // builder.add(DatabaseHelper.newContactResource("contact_1"));
     contacts = builder.build();
     jpaTm().transact(() -> jpaTm().putAll(contacts));
   }
 
   @Test
-  void nonTransactionalQuery_noDupe() {
-    Read<ContactResource, String> read =
-        RegistryJpaIO.read(
-            (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
-            ContactBase::getContactId);
-    PCollection<String> repoIds = testPipeline.apply(read);
-
-    PAssert.that(repoIds).containsInAnyOrder("contact_0", "contact_1", "contact_2");
-    testPipeline.run();
-  }
-
-  @Test
-  void nonTransactionalQuery_withDuplicates() {
-    jpaTm().transact(() -> jpaTm().put(DatabaseHelper.newContactResource("contact_1")));
+  void nonTransactionalQuery() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(
             (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),

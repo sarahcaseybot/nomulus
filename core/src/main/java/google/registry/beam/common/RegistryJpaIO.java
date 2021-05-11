@@ -26,7 +26,6 @@ import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.QueryComposer;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.persistence.criteria.CriteriaQuery;
@@ -94,11 +93,7 @@ public final class RegistryJpaIO {
    * PCollection<String> contactIds =
    *     pipeline
    *         .apply(RegistryJpaIO.read(
-   *             (JpaTransactionManager tm) -> tm.createQueryComposer...,
-   *             contact -> KV.of(contact.getRepoId(), contact.getContactId()))
-   *         .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of())))
-   *         .apply(Deduplicate.keyedValues())
-   *         .apply(Values.create());
+   *             (JpaTransactionManager tm) -> tm.createQueryComposer..., ...);
    * }</pre>
    */
   @AutoValue
@@ -180,21 +175,12 @@ public final class RegistryJpaIO {
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
         // TODO(b/187210388): JpaTransactionManager should support non-transactional query.
-        // TODO(weiminyu): add deduplication
-        HashSet<T> outputs = new HashSet<>();
         jpaTm()
             .transactNoRetry(
-                () -> {
-                  querySupplier.apply(jpaTm()).stream()
-                      .map(resultMapper::apply)
-                      .forEach(
-                          output -> {
-                            if (!outputs.contains(output)) {
-                              outputs.add(output);
-                              outputReceiver.output(output);
-                            }
-                          });
-                });
+                () ->
+                    querySupplier.apply(jpaTm()).stream()
+                        .map(resultMapper::apply)
+                        .forEach(outputReceiver::output));
         // TODO(weiminyu): improve performance by reshuffle.
       }
     }
