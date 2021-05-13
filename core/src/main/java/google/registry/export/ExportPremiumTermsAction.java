@@ -37,7 +37,7 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.storage.drive.DriveConnection;
 import java.io.IOException;
 import java.util.Optional;
@@ -139,10 +139,10 @@ public class ExportPremiumTermsAction implements Runnable {
   private String getFormattedPremiumTerms(Registry registry) {
     String premiumListName = registry.getPremiumList().getName();
     checkState(
-        PremiumListSqlDao.getLatestRevision(premiumListName).isPresent(),
+        PremiumListDao.getLatestRevision(premiumListName).isPresent(),
         "Could not load premium list for " + tld);
     SortedSet<String> premiumTerms =
-        Streams.stream(PremiumListSqlDao.loadAllPremiumListEntries(premiumListName))
+        Streams.stream(PremiumListDao.loadAllPremiumListEntries(premiumListName))
             .map(PremiumListEntry::toString)
             .collect(ImmutableSortedSet.toImmutableSortedSet(String::compareTo));
 

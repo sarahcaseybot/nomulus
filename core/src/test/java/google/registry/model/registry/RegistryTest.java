@@ -43,7 +43,7 @@ import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
@@ -251,7 +251,7 @@ public final class RegistryTest extends EntityTestCase {
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
     Key<PremiumList> plKey = registry.getPremiumList();
     assertThat(plKey).isNotNull();
-    PremiumList stored = PremiumListSqlDao.getLatestRevision(plKey.getName()).get();
+    PremiumList stored = PremiumListDao.getLatestRevision(plKey.getName()).get();
     assertThat(stored.getName()).isEqualTo("tld2");
   }
 

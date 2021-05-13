@@ -24,7 +24,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import com.google.common.base.Splitter;
 import com.google.common.truth.Truth8;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeJsonResponse;
@@ -79,24 +79,24 @@ class UpdatePremiumListActionTest {
             .omitEmptyStrings()
             .splitToList(
                 readResourceUtf8(DatabaseHelper.class, "default_premium_list_testdata.csv"));
-    PremiumListSqlDao.save("foo", inputLines);
+    PremiumListDao.save("foo", inputLines);
     action.name = "foo";
     action.inputData = "rich,USD 75\nricher,USD 5000\npoor, USD 0.99";
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(loadPremiumListEntries(PremiumListSqlDao.getLatestRevision("foo").get())).hasSize(3);
-    Truth8.assertThat(PremiumListSqlDao.getPremiumPrice("foo", "rich"))
+    assertThat(loadPremiumListEntries(PremiumListDao.getLatestRevision("foo").get())).hasSize(3);
+    Truth8.assertThat(PremiumListDao.getPremiumPrice("foo", "rich"))
         .hasValue(Money.parse("USD 75"));
-    Truth8.assertThat(PremiumListSqlDao.getPremiumPrice("foo", "richer"))
+    Truth8.assertThat(PremiumListDao.getPremiumPrice("foo", "richer"))
         .hasValue(Money.parse("USD 5000"));
-    Truth8.assertThat(PremiumListSqlDao.getPremiumPrice("foo", "poor"))
+    Truth8.assertThat(PremiumListDao.getPremiumPrice("foo", "poor"))
         .hasValue(Money.parse("USD 0.99"));
-    Truth8.assertThat(PremiumListSqlDao.getPremiumPrice("foo", "diamond")).isEmpty();
+    Truth8.assertThat(PremiumListDao.getPremiumPrice("foo", "diamond")).isEmpty();
 
     jpaTm()
         .transact(
             () -> {
-              PremiumList persistedList = PremiumListSqlDao.getLatestRevision("foo").get();
+              PremiumList persistedList = PremiumListDao.getLatestRevision("foo").get();
               assertThat(persistedList.getLabelsToPrices())
                   .containsEntry("rich", new BigDecimal("75.00"));
               assertThat(persistedList.getLabelsToPrices())

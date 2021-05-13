@@ -24,7 +24,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
 import javax.inject.Inject;
 
@@ -51,7 +51,7 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
   @Override
   protected void save() {
     checkArgument(
-        !PremiumListSqlDao.getLatestRevision(name).isPresent(),
+        !PremiumListDao.getLatestRevision(name).isPresent(),
         "A premium list of this name already exists: %s",
         name);
     if (!override) {
@@ -64,7 +64,7 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logInputData();
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-    PremiumListSqlDao.save(name, inputDataPreProcessed);
+    PremiumListDao.save(name, inputDataPreProcessed);
     String message =
         String.format("Saved premium list %s with %d entries", name, inputDataPreProcessed.size());
     logger.atInfo().log(message);

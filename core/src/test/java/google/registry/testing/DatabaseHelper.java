@@ -107,7 +107,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.tmch.LordnTaskUtils;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -1220,7 +1220,7 @@ public class DatabaseHelper {
   /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */
   public static ImmutableMap<String, PremiumListEntry> loadPremiumListEntries(
       PremiumList premiumList) {
-    return Streams.stream(PremiumListSqlDao.loadAllPremiumListEntries(premiumList.getName()))
+    return Streams.stream(PremiumListDao.loadAllPremiumListEntries(premiumList.getName()))
         .collect(toImmutableMap(PremiumListEntry::getLabel, Function.identity()));
   }
 

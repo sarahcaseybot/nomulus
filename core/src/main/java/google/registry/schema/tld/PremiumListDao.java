@@ -47,7 +47,7 @@ import org.joda.time.Duration;
  * {@link PremiumList} object in SQL, and caching these entries so that future lookups can be
  * quicker.
  */
-public class PremiumListSqlDao {
+public class PremiumListDao {
 
   /**
    * In-memory cache for premium lists.
@@ -192,7 +192,7 @@ public class PremiumListSqlDao {
    *
    * <p>This is an expensive operation and should only be used when the entire list is required.
    */
-  public static Iterable<PremiumEntry> loadPremiumListEntriesUncached(PremiumList premiumList) {
+  public static Iterable<PremiumEntry> loadPremiumListEntries(PremiumList premiumList) {
     return jpaTm()
         .transact(
             () ->
@@ -237,7 +237,7 @@ public class PremiumListSqlDao {
                     new IllegalArgumentException(
                         String.format("No premium list with name %s.", premiumListName)));
     CurrencyUnit currencyUnit = premiumList.getCurrency();
-    return Streams.stream(loadPremiumListEntriesUncached(premiumList))
+    return Streams.stream(loadPremiumListEntries(premiumList))
         .map(
             premiumEntry ->
                 new PremiumListEntry.Builder()
@@ -254,9 +254,9 @@ public class PremiumListSqlDao {
     abstract String label();
 
     static RevisionIdAndLabel create(long revisionId, String label) {
-      return new AutoValue_PremiumListSqlDao_RevisionIdAndLabel(revisionId, label);
+      return new AutoValue_PremiumListDao_RevisionIdAndLabel(revisionId, label);
     }
   }
 
-  private PremiumListSqlDao() {}
+  private PremiumListDao() {}
 }

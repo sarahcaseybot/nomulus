@@ -21,7 +21,7 @@ import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;
@@ -44,7 +44,7 @@ public class CreatePremiumListActionTest {
   @BeforeEach
   void beforeEach() {
     createTlds("foo", "xn--q9jyb4c", "how");
-    PremiumListSqlDao.delete(PremiumListSqlDao.getLatestRevision("foo").get());
+    PremiumListDao.delete(PremiumListDao.getLatestRevision("foo").get());
     action = new CreatePremiumListAction();
     response = new FakeJsonResponse();
     action.response = response;
@@ -88,7 +88,7 @@ public class CreatePremiumListActionTest {
     action.override = true;
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(loadPremiumListEntries(PremiumListSqlDao.getLatestRevision("zanzibar").get()))
+    assertThat(loadPremiumListEntries(PremiumListDao.getLatestRevision("zanzibar").get()))
         .hasSize(1);
   }
 
@@ -98,10 +98,10 @@ public class CreatePremiumListActionTest {
     action.inputData = "rich,USD 25\nricher,USD 1000\n";
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    PremiumList premiumList = PremiumListSqlDao.getLatestRevision("foo").get();
+    PremiumList premiumList = PremiumListDao.getLatestRevision("foo").get();
     assertThat(loadPremiumListEntries(premiumList)).hasSize(2);
-    assertThat(PremiumListSqlDao.getPremiumPrice(premiumList.getName(), "rich"))
+    assertThat(PremiumListDao.getPremiumPrice(premiumList.getName(), "rich"))
         .hasValue(Money.parse("USD 25"));
-    assertThat(PremiumListSqlDao.getPremiumPrice(premiumList.getName(), "diamond")).isEmpty();
+    assertThat(PremiumListDao.getPremiumPrice(premiumList.getName(), "diamond")).isEmpty();
   }
 }
