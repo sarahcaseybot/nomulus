@@ -390,7 +390,9 @@ public class DatabaseHelper {
                             Map.Entry::getKey, entry -> entry.getValue().getValue().getAmount())))
             .build();
     // Since we used to persist a PremiumList to Datastore here, it is necessary to allocate an ID
-    // here to prevent breaking some of the hard-coded flow tests.
+    // here to prevent breaking some of the hard-coded flow tests. IDs in tests are allocated in a
+    // strictly increasing sequence, if we don't pad out the ID here, we would have to renumber
+    // hundreds of unit tests.
     allocateId();
     jpaTm().transact(() -> jpaTm().insert(premiumList));
     maybeAdvanceClock();
