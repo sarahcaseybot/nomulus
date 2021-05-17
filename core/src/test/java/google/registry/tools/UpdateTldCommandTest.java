@@ -921,6 +921,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_setPremiumList() throws Exception {
     runCommandForced("--premium_list=xn--q9jyb4c", "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isPresent();
     assertThat(Registry.get("xn--q9jyb4c").getPremiumList().get().getName())
         .isEqualTo("xn--q9jyb4c");
   }
