@@ -249,7 +249,7 @@ public final class RegistryTest extends EntityTestCase {
   void testSetPremiumList() {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
-    Key<PremiumList> plKey = registry.getPremiumList();
+    Key<PremiumList> plKey = registry.getPremiumList().get();
     assertThat(plKey).isNotNull();
     PremiumList stored = PremiumListDao.getLatestRevision(plKey.getName()).get();
     assertThat(stored.getName()).isEqualTo("tld2");
