@@ -47,7 +47,7 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tmch.ClaimsListDualDatabaseDao;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
@@ -117,7 +117,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   /** Persists a testing claims list to Datastore that contains a single shard. */
   protected void persistClaimsList(ImmutableMap<String, String> labelsToKeys) {
-    ClaimsListDualDatabaseDao.save(ClaimsListShard.create(clock.nowUtc(), labelsToKeys));
+    ClaimsListDao.save(ClaimsListShard.create(clock.nowUtc(), labelsToKeys));
   }
 
   @Test

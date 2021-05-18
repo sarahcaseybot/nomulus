@@ -19,10 +19,10 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import java.util.Optional;
 
 /** Data access object for {@link ClaimsListShard}. */
-public class ClaimsListSqlDao {
+public class ClaimsListDao {
 
   /** Saves the given {@link ClaimsListShard} to Cloud SQL. */
-  static void save(ClaimsListShard claimsList) {
+  public static void save(ClaimsListShard claimsList) {
     jpaTm().transact(() -> jpaTm().insert(claimsList));
   }
 
@@ -30,7 +30,7 @@ public class ClaimsListSqlDao {
    * Returns the most recent revision of the {@link ClaimsListShard} in SQL or an empty list if it
    * doesn't exist.
    */
-  static Optional<ClaimsListShard> get() {
+  public static Optional<ClaimsListShard> get() {
     return jpaTm()
         .transact(
             () -> {
@@ -49,5 +49,5 @@ public class ClaimsListSqlDao {
             });
   }
 
-  private ClaimsListSqlDao() {}
+  private ClaimsListDao() {}
 }

@@ -126,7 +126,7 @@ import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tmch.ClaimsListDualDatabaseDao;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.util.Idn;
@@ -991,7 +991,9 @@ public class DomainFlowUtils {
       InternetDomainName domainName, boolean hasSignedMarks, boolean hasClaimsNotice)
       throws EppException {
     boolean isInClaimsList =
-        ClaimsListDualDatabaseDao.get().getClaimKey(domainName.parts().get(0)).isPresent();
+        ClaimsListDao.get()
+            .flatMap(claimsList -> claimsList.getClaimKey(domainName.parts().get(0)))
+            .isPresent();
     if (hasClaimsNotice && !isInClaimsList) {
       throw new UnexpectedClaimsNoticeException(domainName.toString());
     }
