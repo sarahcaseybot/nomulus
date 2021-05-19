@@ -115,7 +115,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     return new TypeInstantiator<R>(getClass()) {}.getExactType();
   }
 
-  /** Persists a testing claims list to Datastore that contains a single shard. */
+  /** Persists a testing claims list to Cloud SQL. */
   protected void persistClaimsList(ImmutableMap<String, String> labelsToKeys) {
     ClaimsListDao.save(ClaimsListShard.create(clock.nowUtc(), labelsToKeys));
   }

@@ -15,8 +15,9 @@
 package google.registry.model.tmch;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import java.util.Optional;
+import com.google.common.collect.ImmutableMap;
 
 /** Data access object for {@link ClaimsListShard}. */
 public class ClaimsListDao {
@@ -30,7 +31,7 @@ public class ClaimsListDao {
    * Returns the most recent revision of the {@link ClaimsListShard} in SQL or an empty list if it
    * doesn't exist.
    */
-  public static Optional<ClaimsListShard> get() {
+  public static ClaimsListShard get() {
     return jpaTm()
         .transact(
             () -> {
@@ -46,7 +47,8 @@ public class ClaimsListDao {
                   .setParameter("revisionId", revisionId)
                   .getResultStream()
                   .findFirst();
-            });
+            })
+        .orElse(ClaimsListShard.create(START_OF_TIME, ImmutableMap.of()));
   }
 
   private ClaimsListDao() {}

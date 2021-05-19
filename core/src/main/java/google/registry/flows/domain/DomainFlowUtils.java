@@ -990,10 +990,7 @@ public class DomainFlowUtils {
   static void verifyClaimsNoticeIfAndOnlyIfNeeded(
       InternetDomainName domainName, boolean hasSignedMarks, boolean hasClaimsNotice)
       throws EppException {
-    boolean isInClaimsList =
-        ClaimsListDao.get()
-            .flatMap(claimsList -> claimsList.getClaimKey(domainName.parts().get(0)))
-            .isPresent();
+    boolean isInClaimsList = ClaimsListDao.get().getClaimKey(domainName.parts().get(0)).isPresent();
     if (hasClaimsNotice && !isInClaimsList) {
       throw new UnexpectedClaimsNoticeException(domainName.toString());
     }

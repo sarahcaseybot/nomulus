@@ -44,7 +44,7 @@ final class GetClaimsListCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() throws Exception {
-    ClaimsListShard cl = checkNotNull(ClaimsListDao.get().orElse(null), "Couldn't load ClaimsList");
+    ClaimsListShard cl = checkNotNull(ClaimsListDao.get(), "Couldn't load ClaimsList");
     String csv = Joiner.on('\n').withKeyValueSeparator(",").join(cl.getLabelsToKeys()) + "\n";
     Files.asCharSink(output.toFile(), UTF_8).write(csv);
   }

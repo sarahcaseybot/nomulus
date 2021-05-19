@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.truth.Truth8;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
@@ -47,7 +46,7 @@ public class ClaimsListDaoTest {
         ClaimsListShard.create(
             fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.save(claimsList);
-    ClaimsListShard insertedClaimsList = ClaimsListDao.get().get();
+    ClaimsListShard insertedClaimsList = ClaimsListDao.get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
@@ -58,7 +57,7 @@ public class ClaimsListDaoTest {
         ClaimsListShard.create(
             fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.save(claimsList);
-    ClaimsListShard insertedClaimsList = ClaimsListDao.get().get();
+    ClaimsListShard insertedClaimsList = ClaimsListDao.get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     // Save ClaimsList with existing revisionId should fail because revisionId is the primary key.
     assertThrows(PersistenceException.class, () -> ClaimsListDao.save(insertedClaimsList));
@@ -68,14 +67,14 @@ public class ClaimsListDaoTest {
   void save_claimsListWithNoEntries() {
     ClaimsListShard claimsList = ClaimsListShard.create(fakeClock.nowUtc(), ImmutableMap.of());
     ClaimsListDao.save(claimsList);
-    ClaimsListShard insertedClaimsList = ClaimsListDao.get().get();
+    ClaimsListShard insertedClaimsList = ClaimsListDao.get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getLabelsToKeys()).isEmpty();
   }
 
   @Test
   void getCurrent_returnsEmptyListIfTableIsEmpty() {
-    Truth8.assertThat(ClaimsListDao.get()).isEmpty();
+    assertThat(ClaimsListDao.get().labelsToKeys).isEqualTo(ImmutableMap.of());
   }
 
   @Test
@@ -88,7 +87,7 @@ public class ClaimsListDaoTest {
             fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
     ClaimsListDao.save(oldClaimsList);
     ClaimsListDao.save(newClaimsList);
-    assertClaimsListEquals(newClaimsList, ClaimsListDao.get().get());
+    assertClaimsListEquals(newClaimsList, ClaimsListDao.get());
   }
 
   private void assertClaimsListEquals(ClaimsListShard left, ClaimsListShard right) {
