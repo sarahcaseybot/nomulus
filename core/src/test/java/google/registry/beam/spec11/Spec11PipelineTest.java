@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
@@ -46,6 +47,7 @@ import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.TransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
@@ -69,6 +71,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.json.JSONObject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -133,9 +136,11 @@ class Spec11PipelineTest {
   private PCollection<KV<Subdomain, ThreatMatch>> threatMatches;
 
   ImmutableSet<Spec11ThreatMatch> sqlThreatMatches;
+  TransactionManager tm;
 
   @BeforeEach
   void beforeEach() throws Exception {
+    tm = tm();
     TransactionManagerFactory.setTm(jpaTm());
     reportingBucketUrl = Files.createDirectory(tmpDir.resolve(REPORTING_BUCKET_URL)).toFile();
     options.setDate(DATE);
@@ -189,6 +194,11 @@ class Spec11PipelineTest {
                 .setCheckDate(new LocalDate(2020, 1, 27))
                 .setThreatTypes(ImmutableSet.of(ThreatType.UNWANTED_SOFTWARE))
                 .build());
+  }
+
+  @AfterEach
+  void afterEach() {
+    TransactionManagerFactory.setTm(tm);
   }
 
   @Test
