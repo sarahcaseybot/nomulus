@@ -22,6 +22,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -49,7 +50,6 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -214,34 +214,15 @@ class Spec11PipelineTest {
     Spec11Pipeline spec11Pipeline = new Spec11Pipeline(options, safeBrowsingFn);
     spec11Pipeline.setupPipeline(pipeline);
     pipeline.run(options).waitUntilFinish();
-
-    // Check correctly save to GCS
     verifySaveToGcs();
-
-    // Check correctly save to Cloud SQL
-    jpaTm()
-        .transact(
-            () -> {
-              ImmutableList<Spec11ThreatMatch> sqlThreatMatches =
-                  Spec11ThreatMatchDao.loadEntriesByDate(jpaTm(), new LocalDate(2020, 1, 27));
-              assertThat(sqlThreatMatches)
-                  .comparingElementsUsing(immutableObjectCorrespondence("id"))
-                  .containsExactlyElementsIn(sqlThreatMatches);
-            });
+    verifySaveToCloudSql();
   }
 
   @Test
   void testSuccess_saveToSql() {
     Spec11Pipeline.saveToSql(threatMatches, options);
     pipeline.run().waitUntilFinish();
-    assertThat(
-            jpaTm()
-                .transact(
-                    () ->
-                        Spec11ThreatMatchDao.loadEntriesByDate(
-                            jpaTm(), new LocalDate(2020, 1, 27))))
-        .comparingElementsUsing(immutableObjectCorrespondence("id"))
-        .containsExactlyElementsIn(sqlThreatMatches);
+    verifySaveToCloudSql();
   }
 
   @Test
@@ -260,8 +241,8 @@ class Spec11PipelineTest {
   }
 
   private void setupCloudSql() {
-    DatabaseHelper.persistNewRegistrar("TheRegistrar");
-    DatabaseHelper.persistNewRegistrar("NewRegistrar");
+    persistNewRegistrar("TheRegistrar");
+    persistNewRegistrar("NewRegistrar");
     Registrar registrar1 =
         persistResource(
             makeRegistrar1()
@@ -313,6 +294,18 @@ class Spec11PipelineTest {
             Correspondence.from(
                 new ThreatMatchJsonPredicate(), "has fields with unordered threatTypes equal to"))
         .containsExactlyElementsIn(expectedFileContents.subList(1, expectedFileContents.size()));
+  }
+
+  private void verifySaveToCloudSql() {
+    jpaTm()
+        .transact(
+            () -> {
+              ImmutableList<Spec11ThreatMatch> sqlThreatMatches =
+                  Spec11ThreatMatchDao.loadEntriesByDate(jpaTm(), new LocalDate(2020, 1, 27));
+              assertThat(sqlThreatMatches)
+                  .comparingElementsUsing(immutableObjectCorrespondence("id"))
+                  .containsExactlyElementsIn(sqlThreatMatches);
+            });
   }
 
   private DomainBase createDomain(
