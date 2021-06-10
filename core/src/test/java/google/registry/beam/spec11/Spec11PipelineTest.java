@@ -19,7 +19,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
-import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -39,13 +41,13 @@ import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registry.Registry;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
-import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.TransactionManagerFactory;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -134,6 +136,7 @@ class Spec11PipelineTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
+    TransactionManagerFactory.setTm(jpaTm());
     reportingBucketUrl = Files.createDirectory(tmpDir.resolve(REPORTING_BUCKET_URL)).toFile();
     options.setDate(DATE);
     options.setSafeBrowsingApiKey(SAFE_BROWSING_API_KEY);
@@ -203,17 +206,7 @@ class Spec11PipelineTest {
     pipeline.run(options).waitUntilFinish();
 
     // Check correctly save to GCS
-    ImmutableList<String> expectedFileContents =
-        ImmutableList.copyOf(
-            ResourceUtils.readResourceUtf8(this.getClass(), "test_output.txt").split("\n"));
-    ImmutableList<String> resultFileContents = resultFileContents();
-    assertThat(resultFileContents.size()).isEqualTo(expectedFileContents.size());
-    assertThat(resultFileContents.get(0)).isEqualTo(expectedFileContents.get(0));
-    assertThat(resultFileContents.subList(1, resultFileContents.size()))
-        .comparingElementsUsing(
-            Correspondence.from(
-                new ThreatMatchJsonPredicate(), "has fields with unordered threatTypes equal to"))
-        .containsExactlyElementsIn(expectedFileContents.subList(1, expectedFileContents.size()));
+    verifySaveToGcs();
 
     // Check correctly save to Cloud SQL
     jpaTm()
@@ -243,19 +236,9 @@ class Spec11PipelineTest {
 
   @Test
   void testSuccess_saveToGcs() throws Exception {
-    ImmutableList<String> expectedFileContents =
-        ImmutableList.copyOf(
-            ResourceUtils.readResourceUtf8(this.getClass(), "test_output.txt").split("\n"));
     Spec11Pipeline.saveToGcs(threatMatches, options);
     pipeline.run().waitUntilFinish();
-    ImmutableList<String> resultFileContents = resultFileContents();
-    assertThat(resultFileContents.size()).isEqualTo(expectedFileContents.size());
-    assertThat(resultFileContents.get(0)).isEqualTo(expectedFileContents.get(0));
-    assertThat(resultFileContents.subList(1, resultFileContents.size()))
-        .comparingElementsUsing(
-            Correspondence.from(
-                new ThreatMatchJsonPredicate(), "has fields with unordered threatTypes equal to"))
-        .containsExactlyElementsIn(expectedFileContents.subList(1, expectedFileContents.size()));
+    verifySaveToGcs();
   }
 
   @Test
@@ -267,80 +250,59 @@ class Spec11PipelineTest {
   }
 
   private void setupCloudSql() {
-    Registry registry1 = newRegistry("com", "A_APP");
-    Registry registry2 = newRegistry("net", "B_APP");
-    Registry registry3 = newRegistry("bank", "C_APP");
-    Registry registry4 = newRegistry("dev", "D_APP");
-
+    DatabaseHelper.persistNewRegistrar("TheRegistrar");
+    DatabaseHelper.persistNewRegistrar("NewRegistrar");
     Registrar registrar1 =
-        makeRegistrar1()
-            .asBuilder()
-            .setClientId("hello-registrar")
-            .setEmailAddress("email@hello.net")
-            .build();
+        persistResource(
+            makeRegistrar1()
+                .asBuilder()
+                .setClientId("hello-registrar")
+                .setEmailAddress("email@hello.net")
+                .build());
     Registrar registrar2 =
-        makeRegistrar1()
-            .asBuilder()
-            .setClientId("kitty-registrar")
-            .setEmailAddress("contact@kit.ty")
-            .build();
+        persistResource(
+            makeRegistrar1()
+                .asBuilder()
+                .setClientId("kitty-registrar")
+                .setEmailAddress("contact@kit.ty")
+                .build());
     Registrar registrar3 =
-        makeRegistrar1()
-            .asBuilder()
-            .setClientId("cool-registrar")
-            .setEmailAddress("cool@aid.net")
-            .build();
+        persistResource(
+            makeRegistrar1()
+                .asBuilder()
+                .setClientId("cool-registrar")
+                .setEmailAddress("cool@aid.net")
+                .build());
 
-    ContactResource contact1 =
-        new ContactResource.Builder()
-            .setRepoId("contactid_1")
-            .setCreationClientId(registrar1.getClientId())
-            .setTransferData(new ContactTransferData.Builder().build())
-            .setPersistedCurrentSponsorClientId(registrar1.getClientId())
-            .build();
-    ContactResource contact2 =
-        new ContactResource.Builder()
-            .setRepoId("contactid_2")
-            .setCreationClientId(registrar2.getClientId())
-            .setTransferData(new ContactTransferData.Builder().build())
-            .setPersistedCurrentSponsorClientId(registrar2.getClientId())
-            .build();
-    ContactResource contact3 =
-        new ContactResource.Builder()
-            .setRepoId("contactid_3")
-            .setCreationClientId(registrar3.getClientId())
-            .setTransferData(new ContactTransferData.Builder().build())
-            .setPersistedCurrentSponsorClientId(registrar3.getClientId())
-            .build();
+    createTld("com");
+    createTld("net");
+    createTld("bank");
+    createTld("dev");
 
-    DomainBase domain1 = createDomain("111.com", "123456789-COM", registrar1, contact1);
-    DomainBase domain2 = createDomain("party-night.net", "2244AABBC-NET", registrar2, contact2);
-    DomainBase domain3 = createDomain("bitcoin.bank", "1C3D5E7F9-BANK", registrar1, contact1);
-    DomainBase domain4 = createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2);
-    DomainBase domain5 =
-        createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3);
+    ContactResource contact1 = persistActiveContact(registrar1.getClientId());
+    ContactResource contact2 = persistActiveContact(registrar2.getClientId());
+    ContactResource contact3 = persistActiveContact(registrar3.getClientId());
 
-    jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .insertAll(
-                        ImmutableList.of(
-                            registry1,
-                            registry2,
-                            registry3,
-                            registry4,
-                            registrar1,
-                            registrar2,
-                            registrar3,
-                            contact1,
-                            contact2,
-                            contact3,
-                            domain1,
-                            domain2,
-                            domain3,
-                            domain4,
-                            domain5)));
+    persistResource(createDomain("111.com", "123456789-COM", registrar1, contact1));
+    persistResource(createDomain("party-night.net", "2244AABBC-NET", registrar2, contact2));
+    persistResource(createDomain("bitcoin.bank", "1C3D5E7F9-BANK", registrar1, contact1));
+    persistResource(createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2));
+    persistResource(
+        createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3));
+  }
+
+  private void verifySaveToGcs() throws Exception {
+    ImmutableList<String> expectedFileContents =
+        ImmutableList.copyOf(
+            ResourceUtils.readResourceUtf8(this.getClass(), "test_output.txt").split("\n"));
+    ImmutableList<String> resultFileContents = resultFileContents();
+    assertThat(resultFileContents.size()).isEqualTo(expectedFileContents.size());
+    assertThat(resultFileContents.get(0)).isEqualTo(expectedFileContents.get(0));
+    assertThat(resultFileContents.subList(1, resultFileContents.size()))
+        .comparingElementsUsing(
+            Correspondence.from(
+                new ThreatMatchJsonPredicate(), "has fields with unordered threatTypes equal to"))
+        .containsExactlyElementsIn(expectedFileContents.subList(1, expectedFileContents.size()));
   }
 
   private DomainBase createDomain(

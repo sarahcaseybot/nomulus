@@ -141,7 +141,7 @@ public class Spec11Pipeline implements Serializable {
   private static Subdomain parseRow(Object[] row) {
     DomainBase domainBase = (DomainBase) row[0];
     String emailAddress = (String) row[1];
-    if (emailAddress.equals(null)) {
+    if (emailAddress == null) {
       emailAddress = "";
     }
     return Subdomain.create(
