@@ -389,16 +389,16 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
 
   /** The set of reserved lists that are applicable to this registry. */
   @Column(name = "reserved_list_names")
-  Set<Key<ReservedList>> reservedLists;
+  Set<String> reservedLists;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
-  public ImmutableSet<Key<ReservedList>> getReservedLists() {
+  public ImmutableSet<String> getReservedLists() {
     return nullToEmptyImmutableCopy(reservedLists);
   }
 
   /** The static {@link PremiumList} for this TLD, if there is one. */
   @Column(name = "premium_list_name", nullable = true)
-  Key<PremiumList> premiumList;
+  String premiumList;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
   @Column(nullable = false)
@@ -606,7 +606,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
     return anchorTenantAddGracePeriodLength;
   }
 
-  public Optional<Key<PremiumList>> getPremiumList() {
+  public Optional<String> getPremiumList() {
     return Optional.ofNullable(premiumList);
   }
 
@@ -878,22 +878,16 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
 
     public Builder setReservedLists(Set<ReservedList> reservedLists) {
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
-      ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
+      ImmutableSet.Builder<String> builder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
-        builder.add(Key.create(reservedList));
+        builder.add(reservedList.getName());
       }
       getInstance().reservedLists = builder.build();
       return this;
     }
 
     public Builder setPremiumList(PremiumList premiumList) {
-      getInstance().premiumList = (premiumList == null) ? null : Key.create(premiumList);
-      return this;
-    }
-
-    @VisibleForTesting
-    public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
-      getInstance().premiumList = premiumList;
+      getInstance().premiumList = (premiumList == null) ? null : premiumList.getName();
       return this;
     }
 

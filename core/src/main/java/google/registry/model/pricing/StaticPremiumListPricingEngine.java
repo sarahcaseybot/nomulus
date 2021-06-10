@@ -41,7 +41,7 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
     Optional<Money> premiumPrice =
         registry
             .getPremiumList()
-            .flatMap(listKey -> PremiumListDao.getPremiumPrice(listKey.getName(), label));
+            .flatMap(listKey -> PremiumListDao.getPremiumPrice(listKey, label));
     return DomainPrices.create(
         premiumPrice.isPresent(),
         premiumPrice.orElse(registry.getStandardCreateCost()),

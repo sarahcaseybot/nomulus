@@ -16,7 +16,6 @@ package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -27,7 +26,6 @@ import static org.joda.time.Duration.standardDays;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
@@ -180,15 +178,7 @@ public class PremiumListDaoTest {
 
   @Test
   void getPremiumPrice_worksSuccessfully() {
-    persistResource(
-        newRegistry("foobar", "FOOBAR")
-            .asBuilder()
-            .setPremiumListKey(
-                Key.create(
-                    getCrossTldKey(),
-                    google.registry.model.registry.label.PremiumList.class,
-                    "premlist"))
-            .build());
+    persistResource(newRegistry("foobar", "FOOBAR"));
     PremiumListDao.save(
         new PremiumList.Builder()
             .setName("premlist")
@@ -203,15 +193,7 @@ public class PremiumListDaoTest {
 
   @Test
   void testGetPremiumPrice_worksForJPY() {
-    persistResource(
-        newRegistry("foobar", "FOOBAR")
-            .asBuilder()
-            .setPremiumListKey(
-                Key.create(
-                    getCrossTldKey(),
-                    google.registry.model.registry.label.PremiumList.class,
-                    "premlist"))
-            .build());
+    persistResource(newRegistry("foobar", "FOOBAR"));
     PremiumListDao.save(
         new PremiumList.Builder()
             .setName("premlist")

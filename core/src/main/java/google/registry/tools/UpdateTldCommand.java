@@ -26,7 +26,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
@@ -113,7 +112,7 @@ class UpdateTldCommand extends CreateOrUpdateTldCommand {
   ImmutableSet<String> getReservedLists(Registry oldRegistry) {
     return formUpdatedList(
         "reserved lists",
-        oldRegistry.getReservedLists().stream().map(Key::getName).collect(toImmutableSet()),
+        oldRegistry.getReservedLists().stream().collect(toImmutableSet()),
         reservedListNames,
         reservedListsAdd,
         reservedListsRemove);
