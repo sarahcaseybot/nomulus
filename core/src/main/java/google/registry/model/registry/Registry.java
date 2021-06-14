@@ -47,6 +47,7 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Mapify;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
@@ -111,6 +112,28 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   @PostLoad
   void postLoad() {
     tldStr = tldStrId;
+    if (premiumListName != null) {
+      premiumList = Key.create(getCrossTldKey(), PremiumList.class, premiumListName);
+    }
+    if (reservedListNames != null) {
+      ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
+      for (String name : reservedListNames) {
+        builder.add(Key.create(getCrossTldKey(), ReservedList.class, name));
+      }
+      reservedLists = builder.build();
+    }
+  }
+
+  @OnLoad
+  void onLoad() {
+    if (reservedLists != null) {
+      ImmutableSet.Builder<String> builder = new ImmutableSet.Builder<>();
+      for (Key<ReservedList> reservedListKey : reservedLists) {
+        builder.add(reservedListKey.getName());
+      }
+      reservedListNames = builder.build();
+    }
+    premiumListName = premiumList == null ? null : premiumList.getName();
   }
 
   /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
@@ -388,8 +411,11 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved lists that are applicable to this registry. */
+  @Transient Set<Key<ReservedList>> reservedLists;
+
+  /** The set of reserved list names that are applicable to this registry. */
   @Column(name = "reserved_list_names")
-  Set<Key<ReservedList>> reservedLists;
+  Set<String> reservedListNames;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
   public ImmutableSet<Key<ReservedList>> getReservedLists() {
@@ -397,8 +423,11 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   }
 
   /** The static {@link PremiumList} for this TLD, if there is one. */
+  @Transient Key<PremiumList> premiumList;
+
+  /** The name of the {@link PremiumList} for this TLD, if there is one. */
   @Column(name = "premium_list_name", nullable = true)
-  Key<PremiumList> premiumList;
+  String premiumListName;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
   @Column(nullable = false)
@@ -879,21 +908,26 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
     public Builder setReservedLists(Set<ReservedList> reservedLists) {
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
       ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
+      ImmutableSet.Builder<String> nameBuilder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
         builder.add(Key.create(reservedList));
+        nameBuilder.add(reservedList.getName());
       }
       getInstance().reservedLists = builder.build();
+      getInstance().reservedListNames = nameBuilder.build();
       return this;
     }
 
     public Builder setPremiumList(PremiumList premiumList) {
       getInstance().premiumList = (premiumList == null) ? null : Key.create(premiumList);
+      getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
       return this;
     }
 
     @VisibleForTesting
     public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
       getInstance().premiumList = premiumList;
+      getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
       return this;
     }
 
