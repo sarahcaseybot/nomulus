@@ -417,7 +417,12 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   @Column(name = "reserved_list_names")
   Set<String> reservedListNames;
 
-  /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
+  /**
+   * Retrieves an ImmutableSet of all ReservedLists associated with this tld. This set contains only
+   * the names of the list and not a reference to the lists. Updates to a reserved list in Cloud SQL
+   * are saved as a new ReservedList entity. When using the ReservedList for a registry, the
+   * database should be queried for the entity with this name that has the largest revision ID.
+   */
   public ImmutableSet<Key<ReservedList>> getReservedLists() {
     return nullToEmptyImmutableCopy(reservedLists);
   }
@@ -425,7 +430,12 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   /** The static {@link PremiumList} for this TLD, if there is one. */
   @Transient Key<PremiumList> premiumList;
 
-  /** The name of the {@link PremiumList} for this TLD, if there is one. */
+  /**
+   * The name of the {@link PremiumList} for this TLD, if there is one. This is only the name of the
+   * list and not a reference to the list. Updates to the premium list in Cloud SQL are saved as a
+   * new PremiumList entity. When using the PremiumList for a registry, the database should be
+   * queried for the entity with this name that has the largest revision ID.
+   */
   @Column(name = "premium_list_name", nullable = true)
   String premiumListName;
 
