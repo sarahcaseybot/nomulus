@@ -112,26 +112,24 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   @PostLoad
   void postLoad() {
     tldStr = tldStrId;
+    // TODO(sarahbot@): Remove this rest of this method after this data migration is complete
     if (premiumListName != null) {
       premiumList = Key.create(getCrossTldKey(), PremiumList.class, premiumListName);
     }
     if (reservedListNames != null) {
-      ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
-      for (String name : reservedListNames) {
-        builder.add(Key.create(getCrossTldKey(), ReservedList.class, name));
-      }
-      reservedLists = builder.build();
+      reservedLists =
+          reservedListNames.stream()
+              .map(name -> Key.create(getCrossTldKey(), ReservedList.class, name))
+              .collect(toImmutableSet());
     }
   }
 
+  // TODO(sarahbot@): Remove this method after this data migration is complete
   @OnLoad
   void onLoad() {
     if (reservedLists != null) {
-      ImmutableSet.Builder<String> builder = new ImmutableSet.Builder<>();
-      for (Key<ReservedList> reservedListKey : reservedLists) {
-        builder.add(reservedListKey.getName());
-      }
-      reservedListNames = builder.build();
+      reservedListNames =
+          reservedLists.stream().map(key -> key.getName()).collect(toImmutableSet());
     }
     premiumListName = premiumList == null ? null : premiumList.getName();
   }
@@ -418,10 +416,12 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   Set<String> reservedListNames;
 
   /**
-   * Retrieves an ImmutableSet of all ReservedLists associated with this tld. This set contains only
-   * the names of the list and not a reference to the lists. Updates to a reserved list in Cloud SQL
-   * are saved as a new ReservedList entity. When using the ReservedList for a registry, the
-   * database should be queried for the entity with this name that has the largest revision ID.
+   * Retrieves an ImmutableSet of all ReservedLists associated with this tld.
+   *
+   * <p>This set contains only the names of the list and not a reference to the lists. Updates to a
+   * reserved list in Cloud SQL are saved as a new ReservedList entity. When using the ReservedList
+   * for a registry, the database should be queried for the entity with this name that has the
+   * largest revision ID.
    */
   public ImmutableSet<Key<ReservedList>> getReservedLists() {
     return nullToEmptyImmutableCopy(reservedLists);
@@ -431,10 +431,12 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   @Transient Key<PremiumList> premiumList;
 
   /**
-   * The name of the {@link PremiumList} for this TLD, if there is one. This is only the name of the
-   * list and not a reference to the list. Updates to the premium list in Cloud SQL are saved as a
-   * new PremiumList entity. When using the PremiumList for a registry, the database should be
-   * queried for the entity with this name that has the largest revision ID.
+   * The name of the {@link PremiumList} for this TLD, if there is one.
+   *
+   * <p>This is only the name of the list and not a reference to the list. Updates to the premium
+   * list in Cloud SQL are saved as a new PremiumList entity. When using the PremiumList for a
+   * registry, the database should be queried for the entity with this name that has the largest
+   * revision ID.
    */
   @Column(name = "premium_list_name", nullable = true)
   String premiumListName;
@@ -928,7 +930,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
       return this;
     }
 
-    public Builder setPremiumList(PremiumList premiumList) {
+    public Builder setPremiumList(@Nullable PremiumList premiumList) {
       getInstance().premiumList = (premiumList == null) ? null : Key.create(premiumList);
       getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
       return this;
