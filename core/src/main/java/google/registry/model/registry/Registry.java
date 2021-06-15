@@ -112,7 +112,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   @PostLoad
   void postLoad() {
     tldStr = tldStrId;
-    // TODO(sarahbot@): Remove this rest of this method after this data migration is complete
+    // TODO(sarahbot@): Remove the rest of this method after this data migration is complete
     if (premiumListName != null) {
       premiumList = Key.create(getCrossTldKey(), PremiumList.class, premiumListName);
     }
