@@ -416,7 +416,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   Set<String> reservedListNames;
 
   /**
-   * Retrieves an ImmutableSet of all ReservedLists associated with this tld.
+   * Retrieves an ImmutableSet of all ReservedLists associated with this TLD.
    *
    * <p>This set contains only the names of the list and not a reference to the lists. Updates to a
    * reserved list in Cloud SQL are saved as a new ReservedList entity. When using the ReservedList
