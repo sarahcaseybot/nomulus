@@ -905,12 +905,6 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
       return this;
     }
 
-    // @VisibleForTesting
-    // public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
-    //   getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
-    //   return this;
-    // }
-
     public Builder setRestoreBillingCost(Money amount) {
       checkArgument(amount.isPositiveOrZero(), "restoreBillingCost cannot be negative");
       getInstance().restoreBillingCost = amount;
