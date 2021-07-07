@@ -39,13 +39,13 @@ public final class ExportUtils {
   public String exportReservedTerms(Registry registry) {
     StringBuilder termsBuilder = new StringBuilder(reservedTermsExportDisclaimer).append("\n");
     Set<String> reservedTerms = new TreeSet<>();
-    for (String rlName : registry.getReservedListNames()) {
+    for (String reservedListName : registry.getReservedListNames()) {
       ReservedList reservedList =
-          ReservedListDao.getLatestRevision(rlName)
+          ReservedListDao.getLatestRevision(reservedListName)
               .orElseThrow(
                   () ->
                       new IllegalStateException(
-                          String.format("Reserved list %s does not exist", rlName)));
+                          String.format("Reserved list %s does not exist", reservedListName)));
       if (reservedList.getShouldPublish()) {
         for (ReservedListEntry entry : reservedList.getReservedListEntries().values()) {
           reservedTerms.add(entry.getLabel());

@@ -620,7 +620,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
     return anchorTenantAddGracePeriodLength;
   }
 
-  public Optional<String> getPremiumList() {
+  public Optional<String> getPremiumListName() {
     return Optional.ofNullable(premiumListName);
   }
 
@@ -905,11 +905,11 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
       return this;
     }
 
-    @VisibleForTesting
-    public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
-      getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
-      return this;
-    }
+    // @VisibleForTesting
+    // public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
+    //   getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
+    //   return this;
+    // }
 
     public Builder setRestoreBillingCost(Money amount) {
       checkArgument(amount.isPositiveOrZero(), "restoreBillingCost cannot be negative");
