@@ -518,7 +518,6 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=FooDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumListName()).isPresent();
     assertThat(Registry.get("xn--q9jyb4c").getPremiumListName()).hasValue("xn--q9jyb4c");
   }
 

@@ -850,8 +850,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   void testSuccess_premiumListNotRemovedWhenNotSpecified() throws Exception {
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
     Optional<String> premiumListName = Registry.get("xn--q9jyb4c").getPremiumListName();
-    assertThat(premiumListName).isPresent();
-    assertThat(premiumListName.get()).isEqualTo("xn--q9jyb4c");
+    assertThat(premiumListName).hasValue("xn--q9jyb4c");
   }
 
   @Test
@@ -919,7 +918,6 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_setPremiumList() throws Exception {
     runCommandForced("--premium_list=xn--q9jyb4c", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumListName()).isPresent();
     assertThat(Registry.get("xn--q9jyb4c").getPremiumListName()).hasValue("xn--q9jyb4c");
   }
 
