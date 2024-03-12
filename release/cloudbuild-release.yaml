@@ -149,7 +149,7 @@ steps:
       release/cloudbuild-schema-verify.yaml
     sed -i s/builder:latest/builder@$builder_digest/g \
       release/cloudbuild-renew-prober-certs.yaml
-    sed -i s/builder:latest/builder@$builder_digest/g \
+    sed -i s/builder:live/builder@$builder_digest/g \
       release/cloudbuild-sync-db-objects.yaml
     sed -i s/schema_deployer:latest/schema_deployer@$schema_deployer_digest/g \
       release/cloudbuild-schema-deploy.yaml
