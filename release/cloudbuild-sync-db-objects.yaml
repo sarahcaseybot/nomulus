@@ -25,7 +25,7 @@ steps:
     ./gcompute-tools/git-cookie-authdaemon
     git clone ${_INTERNAL_REPO_URL} nomulus-internal
 # Download and decrypt the nomulus tool credential
-- name: 'gcr.io/$PROJECT_ID/builder:live'
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
