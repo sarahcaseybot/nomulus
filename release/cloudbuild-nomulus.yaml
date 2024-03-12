@@ -118,7 +118,7 @@ steps:
     digest=$(gcloud container images list-tags \
       gcr.io/${PROJECT_ID}/db_object_updater \
       --format="get(digest)" --filter="tags = ${TAG_NAME}")
-    sed -i s/'$${_IMAGE}'/cloudbuild-sync-db-objects/g release/cloudbuild-tag.yaml
+    sed -i s/'$${_IMAGE}'/db_object_updater/g release/cloudbuild-tag.yaml
     sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
     sed -i s/'db_object_updater:latest'/db_object_updater@$digest/g \
       release/cloudbuild-sync-db-objects-*.yaml
